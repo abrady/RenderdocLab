@@ -1,0 +1,75 @@
+cmake_minimum_required(VERSION 3.16)
+project(RenderdocBrownbag VERSION 1.0.0 LANGUAGES CXX)
+
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Find Vulkan package
+find_package(Vulkan REQUIRED)
+
+# Add GLFW for window creation
+include(FetchContent)
+FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG 3.3.8
+)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(glfw)
+
+# Add GLM for mathematics
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG 0.9.9.8
+)
+FetchContent_MakeAvailable(glm)
+
+# Set source files
+set(SOURCES
+    src/main.cpp
+    src/vulkan_app.cpp
+)
+
+# Set header files
+set(HEADERS
+    src/vulkan_app.h
+)
+
+# Create executable
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+
+# Link libraries
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    Vulkan::Vulkan
+    glfw
+    glm
+)
+
+# Include directories
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${Vulkan_INCLUDE_DIRS}
+)
+
+# Copy shader files to build directory
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+# Add compile definitions
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
+)
+
+# Set output directory
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# Print Vulkan information
+message(STATUS "Vulkan_FOUND: ${Vulkan_FOUND}")
+message(STATUS "Vulkan_INCLUDE_DIRS: ${Vulkan_INCLUDE_DIRS}")
+message(STATUS "Vulkan_LIBRARIES: ${Vulkan_LIBRARIES}")
