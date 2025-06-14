@@ -65,11 +65,13 @@ FetchContent_MakeAvailable(stb)
 # Set common source files
 set(COMMON_SOURCES
     common/vulkan_app.cpp
+    common/vulkan_compute_app.cpp
 )
 
 # Set common header files
 set(COMMON_HEADERS
     common/vulkan_app.h
+    common/vulkan_compute_app.h
 )
 
 # Create common library

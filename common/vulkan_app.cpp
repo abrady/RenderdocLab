@@ -1035,6 +1035,11 @@ VulkanApp::QueueFamilyIndices VulkanApp::findQueueFamilies(VkPhysicalDevice dev)
             indices.graphicsFamily = i;
         }
 
+        if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
+        {
+            indices.computeFamily = i;
+        }
+
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(dev, i, surface, &presentSupport);
 
@@ -1043,7 +1048,7 @@ VulkanApp::QueueFamilyIndices VulkanApp::findQueueFamilies(VkPhysicalDevice dev)
             indices.presentFamily = i;
         }
 
-        if (indices.isComplete())
+        if (indices.graphicsFamily && indices.presentFamily && indices.computeFamily)
         {
             break;
         }

@@ -10,6 +10,11 @@
 #include <array>
 #include <filesystem>
 
+// Global validation and extension lists shared with helpers
+extern const std::vector<const char *> validationLayers;
+extern const std::vector<const char *> deviceExtensions;
+extern const bool enableValidationLayers;
+
 #define VULKANAPP_GETSHADERDIR \
   ((std::filesystem::path{__FILE__}.parent_path() / "shaders").generic_string() + '/')
 
@@ -112,6 +117,7 @@ protected:
   {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
+    std::optional<uint32_t> computeFamily;
 
     bool isComplete()
     {
