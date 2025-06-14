@@ -16,7 +16,7 @@
 // Vertex structure with position and texture coordinates
 struct Vertex
 {
-    glm::vec2 pos;
+    glm::vec3 pos;
     glm::vec2 texCoord;
 
     static VkVertexInputBindingDescription getBindingDescription()
@@ -36,7 +36,7 @@ struct Vertex
         // Position attribute
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
         // Texture coordinate attribute
@@ -52,7 +52,7 @@ struct Vertex
 // Vertex layout used during the compute pass
 struct ComputeVertex
 {
-    glm::vec2 pos;
+    glm::vec3 pos;
     glm::vec2 texCoord;
     glm::uvec2 boneIDs;
     glm::vec2 weights;
@@ -65,28 +65,38 @@ public:
     ComputeSkinningApp(int width, int height, const std::string &appName)
         : VulkanComputeApp(width, height, appName, VULKANAPP_GETSHADERDIR)
     {
-        // Generate a simple cylinder mesh made of vertical segments
-        const uint32_t SEGMENTS = 20;
+        // Generate a cylinder mesh and store skinning weights per-vertex
+        const uint32_t SEGMENTS = 20; // vertical subdivisions
+        const uint32_t SLICES = 20;   // around circumference
         const float RADIUS = 0.25f;
 
         for (uint32_t i = 0; i <= SEGMENTS; ++i)
         {
-            float t = static_cast<float>(i) / SEGMENTS;
-            float y = -0.5f + t;
+            float ty = static_cast<float>(i) / SEGMENTS;
+            float y = -0.5f + ty;
 
-            computeVertices.push_back({{-RADIUS, y}, {0.0f, t}, {0, 1}, {1.0f - t, t}});
-            computeVertices.push_back({{RADIUS, y}, {1.0f, t}, {0, 1}, {1.0f - t, t}});
+            for (uint32_t j = 0; j <= SLICES; ++j)
+            {
+                float tj = static_cast<float>(j) / SLICES;
+                float theta = tj * 2.0f * static_cast<float>(M_PI);
+                float x = RADIUS * std::cos(theta);
+                float z = RADIUS * std::sin(theta);
+                computeVertices.push_back({{x, y, z}, {tj, ty}, {0, 1}, {1.0f - ty, ty}});
+            }
         }
 
         for (uint32_t i = 0; i < SEGMENTS; ++i)
         {
-            uint16_t base = static_cast<uint16_t>(i * 2);
-            indices.push_back(base);
-            indices.push_back(base + 1);
-            indices.push_back(base + 2);
-            indices.push_back(base + 2);
-            indices.push_back(base + 1);
-            indices.push_back(base + 3);
+            for (uint32_t j = 0; j < SLICES; ++j)
+            {
+                uint16_t base = static_cast<uint16_t>(i * (SLICES + 1) + j);
+                indices.push_back(base);
+                indices.push_back(base + SLICES + 1);
+                indices.push_back(base + 1);
+                indices.push_back(base + 1);
+                indices.push_back(base + SLICES + 1);
+                indices.push_back(base + SLICES + 2);
+            }
         }
     }
 
@@ -303,11 +313,13 @@ protected:
     void runComputeSkinning(float angle)
     {
         void *mapped;
+        glm::mat4 world = glm::rotate(glm::mat4(1.0f), glm::radians(-30.0f), glm::vec3(1, 0, 0)) *
+                         glm::rotate(glm::mat4(1.0f), glm::radians(30.0f), glm::vec3(0, 1, 0));
         std::array<glm::mat4, 2> boneMats = {
-            glm::mat4(1.0f),
-            glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f)) *
-                glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0, 0, 1)) *
-                glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.5f, 0.0f))};
+            world,
+            world * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f)) *
+                        glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0, 0, 1)) *
+                        glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.5f, 0.0f))};
 
         vkMapMemory(device, boneBufferMemory, 0, sizeof(glm::mat4) * 2, 0, &mapped);
         memcpy(mapped, boneMats.data(), sizeof(glm::mat4) * 2);
