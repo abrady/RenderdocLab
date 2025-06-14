@@ -3,24 +3,33 @@
 #include <vector>
 #include <cstring>
 
-class ComputeExample : public VulkanComputeApp {
+class ComputeExample : public VulkanComputeApp
+{
 public:
-    ComputeExample() : VulkanComputeApp(1,1,"Compute Example", VULKANAPP_GETSHADERDIR) {}
+    ComputeExample() : VulkanComputeApp(1, 1, "Compute Example", VULKANAPP_GETSHADERDIR) {}
 
-    void runExample() {
+    void runExample()
+    {
         const uint32_t NUM_ELEMENTS = 16;
         std::vector<float> data(NUM_ELEMENTS);
-        for (uint32_t i=0;i<NUM_ELEMENTS;++i) data[i] = static_cast<float>(i);
+        std::cout << "Running compute shader example with " << NUM_ELEMENTS << " elements." << std::endl;
+        for (uint32_t i = 0; i < NUM_ELEMENTS; ++i)
+        {
+            data[i] = static_cast<float>(i);
+            std::cout << data[i] << " ";
+        }
+        std::cout << std::endl;
 
-        VkBuffer buffer; VkDeviceMemory bufferMemory;
-        createBuffer(sizeof(float)*NUM_ELEMENTS,
+        VkBuffer buffer;
+        VkDeviceMemory bufferMemory;
+        createBuffer(sizeof(float) * NUM_ELEMENTS,
                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      buffer, bufferMemory);
 
-        void* mapped;
+        void *mapped;
         vkMapMemory(device, bufferMemory, 0, VK_WHOLE_SIZE, 0, &mapped);
-        memcpy(mapped, data.data(), sizeof(float)*NUM_ELEMENTS);
+        memcpy(mapped, data.data(), sizeof(float) * NUM_ELEMENTS);
         vkUnmapMemory(device, bufferMemory);
 
         VkDescriptorSetLayoutBinding layoutBinding{};
@@ -47,7 +56,7 @@ public:
         VkShaderModuleCreateInfo moduleInfo{};
         moduleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
         moduleInfo.codeSize = code.size();
-        moduleInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+        moduleInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
         VkShaderModule shaderModule;
         vkCreateShaderModule(device, &moduleInfo, nullptr, &shaderModule);
 
@@ -86,7 +95,7 @@ public:
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = buffer;
         bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(float)*NUM_ELEMENTS;
+        bufferInfo.range = sizeof(float) * NUM_ELEMENTS;
         VkWriteDescriptorSet write{};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.dstSet = descriptorSet;
@@ -103,10 +112,14 @@ public:
         endSingleTimeCommands(commandBuffer);
 
         vkMapMemory(device, bufferMemory, 0, VK_WHOLE_SIZE, 0, &mapped);
-        memcpy(data.data(), mapped, sizeof(float)*NUM_ELEMENTS);
+        memcpy(data.data(), mapped, sizeof(float) * NUM_ELEMENTS);
         vkUnmapMemory(device, bufferMemory);
 
-        for(float f : data) std::cout << f << " ";
+        std::cout << "Data after compute shader execution:" << std::endl;
+        for (float f : data)
+        {
+            std::cout << f << " ";
+        }
         std::cout << std::endl;
 
         vkDestroyDescriptorPool(device, descriptorPool, nullptr);
@@ -118,7 +131,8 @@ public:
         vkFreeMemory(device, bufferMemory, nullptr);
     }
 
-    void init() {
+    void init()
+    {
         // Initialize GLFW and create a hidden window so that the surface
         // extension is enabled. This avoids validation errors when the
         // base helpers query for presentation support.
@@ -133,10 +147,10 @@ public:
     }
 };
 
-int main() {
+int main()
+{
     ComputeExample app;
     app.init();
     app.runExample();
     return 0;
 }
-

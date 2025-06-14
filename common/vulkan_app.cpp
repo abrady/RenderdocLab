@@ -83,6 +83,9 @@ std::vector<char> VulkanApp::compileShader(const std::string &filename, VkShader
     case VK_SHADER_STAGE_FRAGMENT_BIT:
         shaderTypeFlag = "-fshader-stage=fragment";
         break;
+    case VK_SHADER_STAGE_COMPUTE_BIT:
+        shaderTypeFlag = "-fshader-stage=compute";
+        break;
     default:
         throw std::runtime_error("Unsupported shader stage");
     }
@@ -194,14 +197,17 @@ void VulkanApp::cleanup()
 {
     cleanupSwapChain();
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-        vkDestroyFence(device, inFlightFences[i], nullptr);
-    }
+    std::ranges::for_each(renderFinishedSemaphores, [d = device](VkSemaphore s)
+                          { vkDestroySemaphore(d, s, nullptr); });
+    std::ranges::for_each(imageAvailableSemaphores, [d = device](VkSemaphore s)
+                          { vkDestroySemaphore(d, s, nullptr); });
+    std::ranges::for_each(inFlightFences, [d = device](VkFence f)
+                          { vkDestroyFence(d, f, nullptr); });
 
-    vkDestroyCommandPool(device, commandPool, nullptr);
+    if (commandPool != VK_NULL_HANDLE)
+    {
+        vkDestroyCommandPool(device, commandPool, nullptr);
+    }
     vkDestroyDevice(device, nullptr);
 
     if (enableValidationLayers)
@@ -891,18 +897,35 @@ void VulkanApp::cleanupSwapChain()
         vkDestroyFramebuffer(device, framebuffer, nullptr);
     }
 
-    vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+    if (commandPool != VK_NULL_HANDLE)
+    {
+        vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+    }
 
-    vkDestroyPipeline(device, graphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(device, _pipelineLayout, nullptr);
-    vkDestroyRenderPass(device, renderPass, nullptr);
+    if (graphicsPipeline != VK_NULL_HANDLE)
+    {
+        vkDestroyPipeline(device, graphicsPipeline, nullptr);
+    }
+
+    if (_pipelineLayout != VK_NULL_HANDLE)
+    {
+        vkDestroyPipelineLayout(device, _pipelineLayout, nullptr);
+    }
+
+    if (renderPass != VK_NULL_HANDLE)
+    {
+        vkDestroyRenderPass(device, renderPass, nullptr);
+    }
 
     for (auto imageView : swapChainImageViews)
     {
         vkDestroyImageView(device, imageView, nullptr);
     }
 
-    vkDestroySwapchainKHR(device, swapChain, nullptr);
+    if (swapChain != VK_NULL_HANDLE)
+    {
+        vkDestroySwapchainKHR(device, swapChain, nullptr);
+    }
 }
 
 bool VulkanApp::checkValidationLayerSupport()
@@ -973,7 +996,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanApp::debugCallback(
     }
     else
     {
-        std::cout << "Validation layer info: " << pCallbackData->pMessage << std::endl;
+        // std::cout << "Validation layer info: " << pCallbackData->pMessage << std::endl;
     }
 
     return VK_FALSE;

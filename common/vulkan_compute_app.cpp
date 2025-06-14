@@ -4,14 +4,16 @@
 #include <fstream>
 #include <cstdlib>
 
-VulkanComputeApp::~VulkanComputeApp() {
-    if (computeCommandPool != VK_NULL_HANDLE) {
+VulkanComputeApp::~VulkanComputeApp()
+{
+    if (computeCommandPool != VK_NULL_HANDLE)
+    {
         vkDestroyCommandPool(device, computeCommandPool, nullptr);
     }
-    VulkanApp::cleanup();
 }
 
-void VulkanComputeApp::initVulkan() {
+void VulkanComputeApp::initVulkan()
+{
     createInstance();
     setupDebugMessenger();
     createSurface();
@@ -28,7 +30,8 @@ void VulkanComputeApp::initVulkan() {
     createSyncObjects();
 }
 
-void VulkanComputeApp::createLogicalDevice() {
+void VulkanComputeApp::createLogicalDevice()
+{
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -37,7 +40,8 @@ void VulkanComputeApp::createLogicalDevice() {
         uniqueQueueFamilies.insert(indices.computeFamily.value());
 
     float queuePriority = 1.0f;
-    for (uint32_t qFamily : uniqueQueueFamilies) {
+    for (uint32_t qFamily : uniqueQueueFamilies)
+    {
         VkDeviceQueueCreateInfo qInfo{};
         qInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         qInfo.queueFamilyIndex = qFamily;
@@ -57,14 +61,18 @@ void VulkanComputeApp::createLogicalDevice() {
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-    if (enableValidationLayers) {
+    if (enableValidationLayers)
+    {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
-    } else {
+    }
+    else
+    {
         createInfo.enabledLayerCount = 0;
     }
 
-    if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+    if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
+    {
         throw std::runtime_error("Failed to create logical device!");
     }
 
@@ -76,7 +84,8 @@ void VulkanComputeApp::createLogicalDevice() {
         computeQueue = graphicsQueue;
 }
 
-void VulkanComputeApp::createComputeCommandPool() {
+void VulkanComputeApp::createComputeCommandPool()
+{
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
     uint32_t family = indices.computeFamily ? indices.computeFamily.value() : indices.graphicsFamily.value();
 
@@ -85,12 +94,14 @@ void VulkanComputeApp::createComputeCommandPool() {
     poolInfo.queueFamilyIndex = family;
     poolInfo.flags = 0;
 
-    if (vkCreateCommandPool(device, &poolInfo, nullptr, &computeCommandPool) != VK_SUCCESS) {
+    if (vkCreateCommandPool(device, &poolInfo, nullptr, &computeCommandPool) != VK_SUCCESS)
+    {
         throw std::runtime_error("Failed to create compute command pool!");
     }
 }
 
-VkCommandBuffer VulkanComputeApp::beginSingleTimeCommands() {
+VkCommandBuffer VulkanComputeApp::beginSingleTimeCommands()
+{
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -109,7 +120,8 @@ VkCommandBuffer VulkanComputeApp::beginSingleTimeCommands() {
     return commandBuffer;
 }
 
-void VulkanComputeApp::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+void VulkanComputeApp::endSingleTimeCommands(VkCommandBuffer commandBuffer)
+{
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};
@@ -124,14 +136,16 @@ void VulkanComputeApp::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
 }
 
 void VulkanComputeApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-                                    VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
+                                    VkBuffer &buffer, VkDeviceMemory &bufferMemory)
+{
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
     bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+    if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
+    {
         throw std::runtime_error("Failed to create buffer!");
     }
 
@@ -143,14 +157,16 @@ void VulkanComputeApp::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
+    {
         throw std::runtime_error("Failed to allocate buffer memory!");
     }
 
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
 }
 
-void VulkanComputeApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkQueue queue, VkCommandPool pool) {
+void VulkanComputeApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkQueue queue, VkCommandPool pool)
+{
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -182,4 +198,3 @@ void VulkanComputeApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDevi
 
     vkFreeCommandBuffers(device, pool, 1, &commandBuffer);
 }
-

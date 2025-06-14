@@ -82,8 +82,6 @@ protected:
     // Override initVulkan to create descriptor layout before pipeline
     void initVulkan() override
     {
-        // Descriptor set layout is required for pipeline creation
-        createDescriptorSetLayout();
         VulkanApp::initVulkan();
 
         // Run compute shader to skin vertices before creating buffers
@@ -129,6 +127,8 @@ protected:
     // Create graphics pipeline with vertex input and descriptor set layout
     void createGraphicsPipeline() override
     {
+        createDescriptorSetLayout();
+
         std::vector<char> vertShaderCode;
         std::vector<char> fragShaderCode;
 
@@ -729,8 +729,6 @@ protected:
 
         vkBindImageMemory(device, image, imageMemory, 0);
     }
-
-
 
     // Helper function to copy buffer to image
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
