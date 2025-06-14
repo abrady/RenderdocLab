@@ -75,6 +75,7 @@ private:
     std::vector<const char*> getRequiredExtensions();
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
     bool isDeviceSuitable(VkPhysicalDevice device);
+    VkShaderModule createShaderModule(const std::vector<char>& code);
 
     // Struct for queue family indices
     struct QueueFamilyIndices {
