@@ -156,6 +156,15 @@ protected:
   VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
   VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
 
+  // Single-use command helpers
+  VkCommandBuffer beginSingleTimeCommands();
+  void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+
+  // General image layout transition helper
+  void transitionImageLayout(VkImage image, VkFormat format,
+                             VkImageLayout oldLayout,
+                             VkImageLayout newLayout);
+
   // Drawing functions
   void drawFrame();
   void recreateSwapChain();
