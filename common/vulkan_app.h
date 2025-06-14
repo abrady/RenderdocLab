@@ -84,6 +84,9 @@ protected:
     virtual void createCommandBuffers();
     void createSyncObjects();
 
+    // Called each frame between pipeline bind and render pass end
+    virtual void recordRenderCommands(VkCommandBuffer commandBuffer);
+
     // Helper functions
     bool checkValidationLayerSupport();
     bool checkDeviceExtensionSupport(VkPhysicalDevice device);
