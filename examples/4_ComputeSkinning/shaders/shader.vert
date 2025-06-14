@@ -5,7 +5,11 @@ layout(location = 1) in vec2 inTexCoord;
 
 layout(location = 0) out vec2 fragTexCoord;
 
+layout(binding = 1) uniform CameraUBO {
+    mat4 viewProj;
+} camera;
+
 void main() {
-    gl_Position = vec4(inPosition, 1.0);
+    gl_Position = camera.viewProj * vec4(inPosition, 1.0);
     fragTexCoord = inTexCoord;
 }
