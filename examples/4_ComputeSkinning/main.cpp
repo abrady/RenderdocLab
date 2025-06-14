@@ -1,5 +1,8 @@
 #include "vulkan_compute_app.h"
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
@@ -328,12 +331,12 @@ protected:
     {
         void *mapped;
         glm::mat4 world = glm::rotate(glm::mat4(1.0f), glm::radians(-30.0f), glm::vec3(1, 0, 0)) *
-                         glm::rotate(glm::mat4(1.0f), glm::radians(30.0f), glm::vec3(0, 1, 0));
+                          glm::rotate(glm::mat4(1.0f), glm::radians(30.0f), glm::vec3(0, 1, 0));
         std::array<glm::mat4, 2> boneMats = {
             world,
             world * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f)) *
-                        glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0, 0, 1)) *
-                        glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.5f, 0.0f))};
+                glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0, 0, 1)) *
+                glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.5f, 0.0f))};
 
         vkMapMemory(device, boneBufferMemory, 0, sizeof(glm::mat4) * 2, 0, &mapped);
         memcpy(mapped, boneMats.data(), sizeof(glm::mat4) * 2);
