@@ -15,6 +15,7 @@ int main() {
     const int HEIGHT = 600;
 
     HelloTriangleApp app(WIDTH, HEIGHT, "Vulkan Hello Triangle");
+    app.init();
 
     try {
         app.run();

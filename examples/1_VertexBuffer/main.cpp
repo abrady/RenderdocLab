@@ -307,6 +307,7 @@ int main() {
 
     try {
         VertexBufferApp app(WIDTH, HEIGHT, APP_NAME);
+        app.init();
         app.run();
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
