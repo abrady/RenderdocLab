@@ -10,6 +10,8 @@
 #include <array>
 #include <filesystem>
 
+#define MAX_FRAMES_IN_FLIGHT 2
+
 class VulkanApp {
 public:
     VulkanApp(int width, int height, const std::string& appName);

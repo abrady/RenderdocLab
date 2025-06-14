@@ -10,7 +10,6 @@
 #include <filesystem>
 
 // Constants
-const int MAX_FRAMES_IN_FLIGHT = 2;
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
 };
