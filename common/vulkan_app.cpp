@@ -151,7 +151,7 @@ void VulkanApp::initWindow()
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    window = glfwCreateWindow(width, height, appName.c_str(), nullptr, nullptr);
+    window = glfwCreateWindow(windowWidth, height, appName.c_str(), nullptr, nullptr);
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 }
