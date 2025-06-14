@@ -3,6 +3,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+// Toggle this to enable/disable compute skinning. When false, the example
+// renders the cylinder geometry without running the compute shader.
+constexpr bool USE_COMPUTE_SKINNING = false;
+
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
@@ -114,10 +118,17 @@ protected:
         createTextureSampler();
         createDescriptorPool();
         createDescriptorSets();
-        createComputeResources();
 
-        // Run compute shader once to populate the vertex buffer
-        runComputeSkinning(0.0f);
+        if (USE_COMPUTE_SKINNING)
+        {
+            createComputeResources();
+            // Run compute shader once to populate the vertex buffer
+            runComputeSkinning(0.0f);
+        }
+        else
+        {
+            populateVertexBufferNoSkinning();
+        }
         startTime = std::chrono::steady_clock::now();
 
         // Command buffers were created in base init before we had vertex data
@@ -294,11 +305,14 @@ protected:
     // Record draw commands each frame
     void recordRenderCommands(VkCommandBuffer commandBuffer) override
     {
-        // Update skinning each frame
-        auto now = std::chrono::steady_clock::now();
-        float time = std::chrono::duration<float>(now - startTime).count();
-        float angle = glm::radians(45.0f) * std::sin(time);
-        runComputeSkinning(angle);
+        // Update skinning each frame if enabled
+        if (USE_COMPUTE_SKINNING)
+        {
+            auto now = std::chrono::steady_clock::now();
+            float time = std::chrono::duration<float>(now - startTime).count();
+            float angle = glm::radians(45.0f) * std::sin(time);
+            runComputeSkinning(angle);
+        }
 
         VkBuffer vertexBuffers[] = {vertexBuffer};
         VkDeviceSize offsets[] = {0};
@@ -373,6 +387,35 @@ protected:
     {
         VkDeviceSize bufferSize = sizeof(Vertex) * computeVertices.size();
         createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
+    }
+
+    // Populate vertex buffer directly without running the compute shader
+    void populateVertexBufferNoSkinning()
+    {
+        std::vector<Vertex> verts;
+        verts.reserve(computeVertices.size());
+        for (const auto &cv : computeVertices)
+        {
+            verts.push_back({cv.pos, cv.texCoord});
+        }
+
+        VkDeviceSize bufferSize = sizeof(Vertex) * verts.size();
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     stagingBuffer, stagingBufferMemory);
+
+        void *data;
+        vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, verts.data(), static_cast<size_t>(bufferSize));
+        vkUnmapMemory(device, stagingBufferMemory);
+
+        copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+
+        vkDestroyBuffer(device, stagingBuffer, nullptr);
+        vkFreeMemory(device, stagingBufferMemory, nullptr);
     }
 
     // Create index buffer
