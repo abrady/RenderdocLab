@@ -6,6 +6,16 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Define examples
+set(EXAMPLES
+    0_HelloTriangle
+    1_VertexBuffer
+)
+
+# Option to select which example to build (default: 0_HelloTriangle)
+set(EXAMPLE "0_HelloTriangle" CACHE STRING "Example to build")
+set_property(CACHE EXAMPLE PROPERTY STRINGS ${EXAMPLES})
+
 # Find Vulkan package
 find_package(Vulkan REQUIRED)
 
@@ -29,47 +39,77 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
-# Set source files
-set(SOURCES
-    src/main.cpp
-    src/vulkan_app.cpp
+# Set common source files
+set(COMMON_SOURCES
+    common/vulkan_app.cpp
 )
 
-# Set header files
-set(HEADERS
-    src/vulkan_app.h
+# Set common header files
+set(COMMON_HEADERS
+    common/vulkan_app.h
 )
 
-# Create executable
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+# Create common library
+add_library(vulkan_common STATIC ${COMMON_SOURCES} ${COMMON_HEADERS})
 
-# Link libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE
+# Link common libraries
+target_link_libraries(vulkan_common PUBLIC
     Vulkan::Vulkan
     glfw
     glm
 )
 
-# Include directories
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
+# Include directories for common library
+target_include_directories(vulkan_common PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${Vulkan_INCLUDE_DIRS}
 )
 
-# Copy shader files to build directory
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-# Add compile definitions
-target_compile_definitions(${PROJECT_NAME} PRIVATE
+# Add compile definitions for common library
+target_compile_definitions(vulkan_common PUBLIC
     VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
 )
 
-# Set output directory
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-)
+# Function to add an example
+function(add_example name)
+    # Set source files for the example
+    set(EXAMPLE_SOURCES
+        examples/${name}/main.cpp
+    )
 
-# Print Vulkan information
+    # Create executable
+    add_executable(${name} ${EXAMPLE_SOURCES})
+
+    # Link libraries
+    target_link_libraries(${name} PRIVATE
+        vulkan_common
+    )
+
+    # Include directories
+    target_include_directories(${name} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/examples/${name}
+    )
+
+    # Copy shader files to build directory
+    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/examples/${name}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
+
+    # Set output directory
+    set_target_properties(${name} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    )
+endfunction()
+
+# Add the selected example
+if(EXAMPLE STREQUAL "0_HelloTriangle")
+    add_example(0_HelloTriangle)
+elseif(EXAMPLE STREQUAL "1_VertexBuffer")
+    add_example(1_VertexBuffer)
+else()
+    message(FATAL_ERROR "Unknown example: ${EXAMPLE}")
+endif()
+
+# Print information
+message(STATUS "Building example: ${EXAMPLE}")
 message(STATUS "Vulkan_FOUND: ${Vulkan_FOUND}")
 message(STATUS "Vulkan_INCLUDE_DIRS: ${Vulkan_INCLUDE_DIRS}")
 message(STATUS "Vulkan_LIBRARIES: ${Vulkan_LIBRARIES}")
