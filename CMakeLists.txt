@@ -19,6 +19,7 @@ set(EXAMPLES
     0_HelloTriangle
     1_VertexBuffer
     2_TextureMapping
+    3_Compute
 )
 
 # Option to build all examples (default: ON)
