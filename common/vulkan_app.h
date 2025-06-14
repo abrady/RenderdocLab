@@ -37,6 +37,9 @@ public:
 
   void run();
 
+  // Called on key events. Default implementation does nothing
+  virtual void onKey(int /*key*/, int /*scancode*/, int /*action*/, int /*mods*/) {}
+
   void setTargetFPS(float fps) { targetFPS = fps; }
   float getTargetFPS() const { return targetFPS; }
 
@@ -184,4 +187,7 @@ protected:
 
   // Static helper for window resize
   static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
+  // Static helper for key input
+  static void keyCallback(GLFWwindow *window, int key, int scancode, int action,
+                          int mods);
 };

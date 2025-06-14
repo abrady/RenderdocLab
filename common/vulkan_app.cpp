@@ -159,12 +159,26 @@ void VulkanApp::initWindow()
     window = glfwCreateWindow(windowWidth, windowHeight, appName.c_str(), nullptr, nullptr);
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+    glfwSetKeyCallback(window, keyCallback);
 }
 
 void VulkanApp::framebufferResizeCallback(GLFWwindow *window, int /*width*/, int /*height*/)
 {
     auto app = reinterpret_cast<VulkanApp *>(glfwGetWindowUserPointer(window));
     app->framebufferResized = true;
+}
+
+void VulkanApp::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+    auto app = reinterpret_cast<VulkanApp *>(glfwGetWindowUserPointer(window));
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+    if (app)
+    {
+        app->onKey(key, scancode, action, mods);
+    }
 }
 
 void VulkanApp::initVulkan()
