@@ -25,7 +25,7 @@ const std::vector<const char*> deviceExtensions = {
 #endif
 
 // Helper function to read shader file
-static std::vector<char> readFile(const std::string& filename) {
+std::vector<char> VulkanApp::readFile(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
@@ -66,9 +66,9 @@ static std::vector<char> readFile(const std::string& filename) {
 }
 
 // Helper function to compile shader from GLSL to SPIR-V at runtime
-static std::vector<char> compileShader(const std::string& filename, VkShaderStageFlagBits shaderStage) {
+std::vector<char> VulkanApp::compileShader(const std::string& filename, VkShaderStageFlagBits shaderStage) {
     // First, read the shader source
-    std::vector<char> shaderSource = readFile(filename);
+    std::vector<char> shaderSource = this->readFile(filename);
 
     // Create a temporary file for the compiled shader
     std::string tempFilename = std::tmpnam(nullptr);

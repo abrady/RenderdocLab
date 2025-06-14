@@ -12,8 +12,11 @@ set(EXAMPLES
     1_VertexBuffer
 )
 
-# Option to select which example to build (default: 0_HelloTriangle)
-set(EXAMPLE "0_HelloTriangle" CACHE STRING "Example to build")
+# Option to build all examples (default: ON)
+option(BUILD_ALL_EXAMPLES "Build all examples" ON)
+
+# Option to select which example to build (used only if BUILD_ALL_EXAMPLES is OFF)
+set(EXAMPLE "0_HelloTriangle" CACHE STRING "Example to build when BUILD_ALL_EXAMPLES is OFF")
 set_property(CACHE EXAMPLE PROPERTY STRINGS ${EXAMPLES})
 
 # Find Vulkan package
@@ -99,17 +102,25 @@ function(add_example name)
     )
 endfunction()
 
-# Add the selected example
-if(EXAMPLE STREQUAL "0_HelloTriangle")
-    add_example(0_HelloTriangle)
-elseif(EXAMPLE STREQUAL "1_VertexBuffer")
-    add_example(1_VertexBuffer)
+# Add examples based on configuration
+if(BUILD_ALL_EXAMPLES)
+    # Build all examples
+    foreach(example ${EXAMPLES})
+        add_example(${example})
+        message(STATUS "Adding example: ${example}")
+    endforeach()
+    message(STATUS "Building all examples")
 else()
-    message(FATAL_ERROR "Unknown example: ${EXAMPLE}")
+    # Build only the selected example
+    if(EXAMPLE IN_LIST EXAMPLES)
+        add_example(${EXAMPLE})
+        message(STATUS "Building example: ${EXAMPLE}")
+    else()
+        message(FATAL_ERROR "Unknown example: ${EXAMPLE}")
+    endif()
 endif()
 
 # Print information
-message(STATUS "Building example: ${EXAMPLE}")
 message(STATUS "Vulkan_FOUND: ${Vulkan_FOUND}")
 message(STATUS "Vulkan_INCLUDE_DIRS: ${Vulkan_INCLUDE_DIRS}")
 message(STATUS "Vulkan_LIBRARIES: ${Vulkan_LIBRARIES}")

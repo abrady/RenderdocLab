@@ -78,6 +78,10 @@ protected:
     bool isDeviceSuitable(VkPhysicalDevice device);
     VkShaderModule createShaderModule(const std::vector<char>& code);
 
+    // Shader helper functions
+    std::vector<char> readFile(const std::string& filename);
+    std::vector<char> compileShader(const std::string& filename, VkShaderStageFlagBits shaderStage);
+
     // Struct for queue family indices
     struct QueueFamilyIndices {
         std::optional<uint32_t> graphicsFamily;

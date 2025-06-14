@@ -23,13 +23,16 @@ A simple Vulkan application setup for demonstrating RenderDoc usage with multipl
    cd build
    ```
 
-3. Configure the project with CMake, specifying which example to build:
+3. Configure the project with CMake:
    ```bash
-   # Build the Hello Triangle example (default)
+   # Build all examples (default)
    cmake ..
 
-   # Or specify a different example
-   cmake .. -DEXAMPLE=1_VertexBuffer
+   # Or build only a specific example
+   cmake .. -DBUILD_ALL_EXAMPLES=OFF -DEXAMPLE=0_HelloTriangle
+
+   # Or build only the Vertex Buffer example
+   cmake .. -DBUILD_ALL_EXAMPLES=OFF -DEXAMPLE=1_VertexBuffer
    ```
 
 4. Build the project:
@@ -39,13 +42,13 @@ A simple Vulkan application setup for demonstrating RenderDoc usage with multipl
 
 ## Running the Examples
 
-After building, you can run the selected example:
+After building, you can run any of the examples:
 
 ```bash
 # Run the Hello Triangle example
 ./bin/0_HelloTriangle
 
-# Or run the Vertex Buffer example (if built)
+# Run the Vertex Buffer example
 ./bin/1_VertexBuffer
 ```
 
