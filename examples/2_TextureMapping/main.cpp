@@ -750,6 +750,7 @@ private:
 
 int main() {
     TextureMappingApp app(800, 600, "Vulkan Texture Mapping Example");
+    app.init();
 
     try {
         // Call our custom run method

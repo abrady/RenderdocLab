@@ -17,10 +17,14 @@
 
 class VulkanApp {
 public:
-    VulkanApp(int width, int height, const std::string& appName, const std::string& shaderDir) : width(width), height(height), appName(appName), shaderDir(shaderDir) {
-      initWindow();
-      initVulkan();
-  }
+    VulkanApp(int width, int height, const std::string& appName, const std::string& shaderDir)
+        : width(width), height(height), appName(appName), shaderDir(shaderDir) {
+    }
+
+    void init() {
+        initWindow();
+        initVulkan();
+    }
     virtual ~VulkanApp();
 
     void run();
