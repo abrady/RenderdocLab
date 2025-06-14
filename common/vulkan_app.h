@@ -37,6 +37,9 @@ public:
 
   void run();
 
+  void setTargetFPS(float fps) { targetFPS = fps; }
+  float getTargetFPS() const { return targetFPS; }
+
 private:
   const std::string shaderDir;
 
@@ -46,6 +49,8 @@ protected:
   int windowHeight;
   std::string appName;
   GLFWwindow *window = nullptr;
+  // Desired frame rate. Defaults to 30 FPS. When 0, rendering runs without delay.
+  float targetFPS = 30.0f;
 
   // Vulkan objects
   VkInstance instance = VK_NULL_HANDLE;

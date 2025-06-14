@@ -8,6 +8,8 @@
 #include <limits>
 #include <fstream>
 #include <filesystem>
+#include <chrono>
+#include <thread>
 
 // Constants
 const std::vector<const char *> validationLayers = {
@@ -186,8 +188,21 @@ void VulkanApp::mainLoop()
 {
     while (!glfwWindowShouldClose(window))
     {
+        auto frameStart = std::chrono::steady_clock::now();
         glfwPollEvents();
         drawFrame();
+
+        if (targetFPS > 0.0f)
+        {
+            auto frameEnd = std::chrono::steady_clock::now();
+            std::chrono::duration<float> elapsed = frameEnd - frameStart;
+            float targetSeconds = 1.0f / targetFPS;
+            if (elapsed.count() < targetSeconds)
+            {
+                std::this_thread::sleep_for(
+                    std::chrono::duration<float>(targetSeconds - elapsed.count()));
+            }
+        }
     }
 
     vkDeviceWaitIdle(device);

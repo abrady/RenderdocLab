@@ -77,6 +77,7 @@ public:
     ComputeSkinningApp(int width, int height, const std::string &appName)
         : VulkanComputeApp(width, height, appName, VULKANAPP_GETSHADERDIR)
     {
+        setTargetFPS(30.0f);
         // Generate a cylinder mesh and store skinning weights per-vertex
         const uint32_t SEGMENTS = 20; // vertical subdivisions
         const uint32_t SLICES = 20;   // around circumference
