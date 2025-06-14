@@ -30,13 +30,8 @@ std::vector<char> VulkanApp::readFile(const std::string& filename) {
     if (!file.is_open()) {
         // Try with different paths
         std::vector<std::string> possiblePaths = {
-            filename,                                // Original path
-            "shaders/" + filename,                   // Relative to executable
-            "../shaders/" + filename,                // One directory up
-            "../../shaders/" + filename,             // Two directories up
-            "../../../shaders/" + filename,          // Three directories up
-            "bin/shaders/" + filename,               // In bin directory
-            "../bin/shaders/" + filename             // One directory up from bin
+          getShaderDir() + filename, // Relative to executable
+          "./shaders/" + filename, // Relative to cwd
         };
 
         for (const auto& path : possiblePaths) {
@@ -70,6 +65,7 @@ std::vector<char> VulkanApp::compileShader(const std::string& filename, VkShader
     std::vector<char> shaderSource = this->readFile(filename);
 
     // Create a temporary file for the compiled shader
+#pragma warning(disable: 4996) // Disable warning about using tmpnam
     std::string tempFilename = std::tmpnam(nullptr);
     tempFilename += ".spv";
 
@@ -127,11 +123,6 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
     }
 }
 
-// VulkanApp implementation
-VulkanApp::VulkanApp(int width, int height, const std::string& appName) : width(width), height(height), appName(appName) {
-    initWindow();
-    initVulkan();
-}
 
 VulkanApp::~VulkanApp() {
     cleanup();
@@ -151,7 +142,7 @@ void VulkanApp::initWindow() {
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 }
 
-void VulkanApp::framebufferResizeCallback(GLFWwindow* window, int width, int height) {
+void VulkanApp::framebufferResizeCallback(GLFWwindow* window, int /*width*/, int /*height*/) {
     auto app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
     app->framebufferResized = true;
 }
@@ -270,9 +261,9 @@ void VulkanApp::pickPhysicalDevice() {
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
-    for (const auto& device : devices) {
-        if (isDeviceSuitable(device)) {
-            physicalDevice = device;
+    for (const auto& d : devices) {
+        if (isDeviceSuitable(d)) {
+            physicalDevice = d;
             break;
         }
     }
@@ -786,10 +777,10 @@ void VulkanApp::drawFrame() {
 }
 
 void VulkanApp::recreateSwapChain() {
-    int width = 0, height = 0;
-    glfwGetFramebufferSize(window, &width, &height);
-    while (width == 0 || height == 0) {
-        glfwGetFramebufferSize(window, &width, &height);
+    int w = 0, h = 0;
+    glfwGetFramebufferSize(window, &w, &h);
+    while (w == 0 || h == 0) {
+        glfwGetFramebufferSize(window, &w, &h);
         glfwWaitEvents();
     }
 
@@ -872,36 +863,36 @@ void VulkanApp::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfo
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanApp::debugCallback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    VkDebugUtilsMessageSeverityFlagBitsEXT /*messageSeverity*/,
+    VkDebugUtilsMessageTypeFlagsEXT /*messageType*/,
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-    void* pUserData) {
+    void* /*pUserData*/) {
 
     std::cerr << "Validation layer: " << pCallbackData->pMessage << std::endl;
 
     return VK_FALSE;
 }
 
-bool VulkanApp::isDeviceSuitable(VkPhysicalDevice device) {
-    QueueFamilyIndices indices = findQueueFamilies(device);
+bool VulkanApp::isDeviceSuitable(VkPhysicalDevice dev) {
+    QueueFamilyIndices indices = findQueueFamilies(dev);
 
-    bool extensionsSupported = checkDeviceExtensionSupport(device);
+    bool extensionsSupported = checkDeviceExtensionSupport(dev);
 
     bool swapChainAdequate = false;
     if (extensionsSupported) {
-        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(dev);
         swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
     }
 
     return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
-bool VulkanApp::checkDeviceExtensionSupport(VkPhysicalDevice device) {
+bool VulkanApp::checkDeviceExtensionSupport(VkPhysicalDevice dev) {
     uint32_t extensionCount;
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+    vkEnumerateDeviceExtensionProperties(dev, nullptr, &extensionCount, nullptr);
 
     std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+    vkEnumerateDeviceExtensionProperties(dev, nullptr, &extensionCount, availableExtensions.data());
 
     std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
@@ -912,14 +903,14 @@ bool VulkanApp::checkDeviceExtensionSupport(VkPhysicalDevice device) {
     return requiredExtensions.empty();
 }
 
-VulkanApp::QueueFamilyIndices VulkanApp::findQueueFamilies(VkPhysicalDevice device) {
+VulkanApp::QueueFamilyIndices VulkanApp::findQueueFamilies(VkPhysicalDevice dev) {
     QueueFamilyIndices indices;
 
     uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(dev, &queueFamilyCount, nullptr);
 
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+    vkGetPhysicalDeviceQueueFamilyProperties(dev, &queueFamilyCount, queueFamilies.data());
 
     int i = 0;
     for (const auto& queueFamily : queueFamilies) {
@@ -928,7 +919,7 @@ VulkanApp::QueueFamilyIndices VulkanApp::findQueueFamilies(VkPhysicalDevice devi
         }
 
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+        vkGetPhysicalDeviceSurfaceSupportKHR(dev, i, surface, &presentSupport);
 
         if (presentSupport) {
             indices.presentFamily = i;
@@ -944,25 +935,25 @@ VulkanApp::QueueFamilyIndices VulkanApp::findQueueFamilies(VkPhysicalDevice devi
     return indices;
 }
 
-VulkanApp::SwapChainSupportDetails VulkanApp::querySwapChainSupport(VkPhysicalDevice device) {
+VulkanApp::SwapChainSupportDetails VulkanApp::querySwapChainSupport(VkPhysicalDevice dev) {
     SwapChainSupportDetails details;
 
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dev, surface, &details.capabilities);
 
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(dev, surface, &formatCount, nullptr);
 
     if (formatCount != 0) {
         details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+        vkGetPhysicalDeviceSurfaceFormatsKHR(dev, surface, &formatCount, details.formats.data());
     }
 
     uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(dev, surface, &presentModeCount, nullptr);
 
     if (presentModeCount != 0) {
         details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+        vkGetPhysicalDeviceSurfacePresentModesKHR(dev, surface, &presentModeCount, details.presentModes.data());
     }
 
     return details;
@@ -992,12 +983,12 @@ VkExtent2D VulkanApp::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilit
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
         return capabilities.currentExtent;
     } else {
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
+        int w, h;
+        glfwGetFramebufferSize(window, &w, &h);
 
         VkExtent2D actualExtent = {
-            static_cast<uint32_t>(width),
-            static_cast<uint32_t>(height)
+            static_cast<uint32_t>(w),
+            static_cast<uint32_t>(h)
         };
 
         actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
