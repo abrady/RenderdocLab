@@ -20,6 +20,7 @@ set(EXAMPLES
     1_VertexBuffer
     2_TextureMapping
     3_Compute
+    4_ComputeSkinning
 )
 
 # Option to build all examples (default: ON)
