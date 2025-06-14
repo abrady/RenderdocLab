@@ -10,14 +10,22 @@
 #include <array>
 #include <filesystem>
 
+#define VULKANAPP_GETSHADERDIR \
+  ((std::filesystem::path{__FILE__}.parent_path() / "shaders").generic_string() + '/')
+
 #define MAX_FRAMES_IN_FLIGHT 2
 
 class VulkanApp {
 public:
-    VulkanApp(int width, int height, const std::string& appName);
+    VulkanApp(int width, int height, const std::string& appName, const std::string& shaderDir) : width(width), height(height), appName(appName), shaderDir(shaderDir) {
+      initWindow();
+      initVulkan();
+  }
     virtual ~VulkanApp();
 
     void run();
+private:
+  const std::string shaderDir;
 
 protected:
     // Window properties
@@ -81,6 +89,9 @@ protected:
     VkShaderModule createShaderModule(const std::vector<char>& code);
 
     // Shader helper functions
+    std::string getShaderDir() const {
+      return shaderDir;
+    }
     std::vector<char> readFile(const std::string& filename);
     std::vector<char> compileShader(const std::string& filename, VkShaderStageFlagBits shaderStage);
 

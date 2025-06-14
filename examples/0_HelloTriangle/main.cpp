@@ -4,12 +4,17 @@
 #include <stdexcept>
 #include <cstdlib>
 
+class HelloTriangleApp : public VulkanApp {
+  public:
+    HelloTriangleApp(int width, int height, const char* title) : VulkanApp(width, height, title, VULKANAPP_GETSHADERDIR) {
+    }
+};
+
 int main() {
     const int WIDTH = 800;
     const int HEIGHT = 600;
-    const std::string APP_NAME = "Vulkan Hello Triangle";
 
-    VulkanApp app(WIDTH, HEIGHT, APP_NAME);
+    HelloTriangleApp app(WIDTH, HEIGHT, "Vulkan Hello Triangle");
 
     try {
         app.run();

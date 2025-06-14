@@ -44,7 +44,7 @@ struct Vertex {
 class VertexBufferApp : public VulkanApp {
 public:
     VertexBufferApp(int width, int height, const std::string& appName)
-        : VulkanApp(width, height, appName) {
+        : VulkanApp(width, height, appName, VULKANAPP_GETSHADERDIR) {
         // Define vertices for a colorful triangle
         vertices = {
             {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},  // Bottom center (red)
