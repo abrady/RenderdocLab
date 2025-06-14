@@ -24,7 +24,7 @@ class VulkanApp
 {
 public:
   VulkanApp(int width, int height, const std::string &appName, const std::string &shaderDir)
-      : windowWidth(width), height(height), appName(appName), shaderDir(shaderDir)
+      : windowWidth(width), windowHeight(height), appName(appName), shaderDir(shaderDir)
   {
   }
 
@@ -43,7 +43,7 @@ private:
 protected:
   // Window properties
   int windowWidth;
-  int height;
+  int windowHeight;
   std::string appName;
   GLFWwindow *window = nullptr;
 
@@ -61,7 +61,7 @@ protected:
   VkExtent2D swapChainExtent;
   std::vector<VkImageView> swapChainImageViews;
   VkRenderPass renderPass = VK_NULL_HANDLE;
-  VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+  VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
   VkPipeline graphicsPipeline = VK_NULL_HANDLE;
   std::vector<VkFramebuffer> swapChainFramebuffers;
   VkCommandPool commandPool = VK_NULL_HANDLE;

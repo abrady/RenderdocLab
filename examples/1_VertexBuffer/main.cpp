@@ -9,11 +9,13 @@
 #include <glm/glm.hpp>
 
 // Vertex structure with position and color
-struct Vertex {
+struct Vertex
+{
     glm::vec2 pos;
     glm::vec3 color;
 
-    static VkVertexInputBindingDescription getBindingDescription() {
+    static VkVertexInputBindingDescription getBindingDescription()
+    {
         VkVertexInputBindingDescription bindingDescription{};
         bindingDescription.binding = 0;
         bindingDescription.stride = sizeof(Vertex);
@@ -22,7 +24,8 @@ struct Vertex {
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
+    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions()
+    {
         std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
 
         // Position attribute
@@ -42,21 +45,23 @@ struct Vertex {
 };
 
 // Vertex buffer example class that extends VulkanApp
-class VertexBufferApp : public VulkanApp {
+class VertexBufferApp : public VulkanApp
+{
 public:
-    VertexBufferApp(int width, int height, const std::string& appName)
-        : VulkanApp(width, height, appName, VULKANAPP_GETSHADERDIR) {
+    VertexBufferApp(int width, int height, const std::string &appName)
+        : VulkanApp(width, height, appName, VULKANAPP_GETSHADERDIR)
+    {
         // Define vertices for a colorful triangle
         vertices = {
-            {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},  // Bottom center (red)
-            {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},   // Top right (green)
-            {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}   // Top left (blue)
+            {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, // Bottom center (red)
+            {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},  // Top right (green)
+            {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}  // Top left (blue)
         };
     }
 
-
     // Record draw commands for this example
-    void recordRenderCommands(VkCommandBuffer commandBuffer) override {
+    void recordRenderCommands(VkCommandBuffer commandBuffer) override
+    {
         VkBuffer vertexBuffers[] = {vertexBuffer};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
@@ -66,39 +71,48 @@ public:
 protected:
     // Create the vertex buffer after the base initialization so we can
     // record command buffers each frame using a valid handle.
-    void initVulkan() override {
+    void initVulkan() override
+    {
         VulkanApp::initVulkan();
         createVertexBuffer();
     }
 
     // Override cleanup to clean up vertex buffer
-    void cleanup() override {
+    void cleanup() override
+    {
         vkDestroyBuffer(device, vertexBuffer, nullptr);
         vkFreeMemory(device, vertexBufferMemory, nullptr);
         VulkanApp::cleanup();
     }
 
     // Override createGraphicsPipeline to use vertex buffer
-    void createGraphicsPipeline() override {
+    void createGraphicsPipeline() override
+    {
         std::vector<char> vertShaderCode;
         std::vector<char> fragShaderCode;
 
-        try {
+        try
+        {
             // Try to compile shaders at runtime
             std::cout << "Attempting to compile shaders at runtime..." << std::endl;
             vertShaderCode = compileShader("shader.vert", VK_SHADER_STAGE_VERTEX_BIT);
             fragShaderCode = compileShader("shader.frag", VK_SHADER_STAGE_FRAGMENT_BIT);
             std::cout << "Successfully compiled shaders!" << std::endl;
-        } catch (const std::exception& e) {
+        }
+        catch (const std::exception &e)
+        {
             // If runtime compilation fails, try to read the shader files directly
             std::cout << "Runtime shader compilation failed: " << e.what() << std::endl;
             std::cout << "Trying to read shader files directly..." << std::endl;
 
-            try {
+            try
+            {
                 vertShaderCode = readFile("shader.vert.spv");
                 fragShaderCode = readFile("shader.frag.spv");
                 std::cout << "Successfully read shader files!" << std::endl;
-            } catch (const std::exception& e) {
+            }
+            catch (const std::exception &e)
+            {
                 std::cerr << "Failed to read shader files: " << e.what() << std::endl;
                 throw; // Re-throw the exception if we can't read the files either
             }
@@ -193,7 +207,8 @@ protected:
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
-        if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+        if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &_pipelineLayout) != VK_SUCCESS)
+        {
             throw std::runtime_error("Failed to create pipeline layout!");
         }
 
@@ -208,11 +223,12 @@ protected:
         pipelineInfo.pRasterizationState = &rasterizer;
         pipelineInfo.pMultisampleState = &multisampling;
         pipelineInfo.pColorBlendState = &colorBlending;
-        pipelineInfo.layout = pipelineLayout;
+        pipelineInfo.layout = _pipelineLayout;
         pipelineInfo.renderPass = renderPass;
         pipelineInfo.subpass = 0;
 
-        if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+        if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
+        {
             throw std::runtime_error("Failed to create graphics pipeline!");
         }
 
@@ -221,16 +237,17 @@ protected:
         vkDestroyShaderModule(device, vertShaderModule, nullptr);
     }
 
-
     // Create vertex buffer
-    void createVertexBuffer() {
+    void createVertexBuffer()
+    {
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = sizeof(vertices[0]) * vertices.size();
         bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateBuffer(device, &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS) {
+        if (vkCreateBuffer(device, &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS)
+        {
             throw std::runtime_error("Failed to create vertex buffer!");
         }
 
@@ -242,13 +259,14 @@ protected:
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        if (vkAllocateMemory(device, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS) {
+        if (vkAllocateMemory(device, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS)
+        {
             throw std::runtime_error("Failed to allocate vertex buffer memory!");
         }
 
         vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
 
-        void* data;
+        void *data;
         vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
         memcpy(data, vertices.data(), (size_t)bufferInfo.size);
         vkUnmapMemory(device, vertexBufferMemory);
@@ -260,16 +278,20 @@ private:
     VkDeviceMemory vertexBufferMemory;
 };
 
-int main() {
+int main()
+{
     const int WIDTH = 800;
     const int HEIGHT = 600;
     const std::string APP_NAME = "Vulkan Vertex Buffer";
 
-    try {
+    try
+    {
         VertexBufferApp app(WIDTH, HEIGHT, APP_NAME);
         app.init();
         app.run();
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception &e)
+    {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }
