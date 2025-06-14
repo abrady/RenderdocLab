@@ -54,10 +54,24 @@ public:
     }
 
 protected:
-    // Override initVulkan to create vertex buffer
+    // Override initVulkan to create the vertex buffer before
+    // recording command buffers. This mirrors VulkanApp::initVulkan
+    // but inserts createVertexBuffer() at the correct spot.
     void initVulkan() override {
-        VulkanApp::initVulkan();
+        createInstance();
+        setupDebugMessenger();
+        createSurface();
+        pickPhysicalDevice();
+        createLogicalDevice();
+        createSwapChain();
+        createImageViews();
+        createRenderPass();
+        createGraphicsPipeline();
+        createFramebuffers();
+        createCommandPool();
         createVertexBuffer();
+        createCommandBuffers();
+        createSyncObjects();
     }
 
     // Override cleanup to clean up vertex buffer
