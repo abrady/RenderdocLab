@@ -10,6 +10,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(EXAMPLES
     0_HelloTriangle
     1_VertexBuffer
+    2_TextureMapping
 )
 
 # Option to build all examples (default: ON)
@@ -42,6 +43,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
+# Add stb_image for texture loading
+include(FetchContent)
+FetchContent_Declare(
+    stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(stb)
+
 # Set common source files
 set(COMMON_SOURCES
     common/vulkan_app.cpp
@@ -66,6 +76,7 @@ target_link_libraries(vulkan_common PUBLIC
 target_include_directories(vulkan_common PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${Vulkan_INCLUDE_DIRS}
+    ${stb_SOURCE_DIR}
 )
 
 # Add compile definitions for common library
@@ -91,10 +102,16 @@ function(add_example name)
     # Include directories
     target_include_directories(${name} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/examples/${name}
+        ${stb_SOURCE_DIR}
     )
 
     # Copy shader files to build directory
     file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/examples/${name}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
+
+    # Copy texture files to build directory if they exist
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/examples/${name}/textures)
+        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/examples/${name}/textures DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
+    endif()
 
     # Set output directory
     set_target_properties(${name} PROPERTIES

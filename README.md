@@ -33,6 +33,9 @@ A simple Vulkan application setup for demonstrating RenderDoc usage with multipl
 
    # Or build only the Vertex Buffer example
    cmake .. -DBUILD_ALL_EXAMPLES=OFF -DEXAMPLE=1_VertexBuffer
+
+   # Or build only the Texture Mapping example
+   cmake .. -DBUILD_ALL_EXAMPLES=OFF -DEXAMPLE=2_TextureMapping
    ```
 
 4. Build the project:
@@ -50,13 +53,16 @@ After building, you can run any of the examples:
 
 # Run the Vertex Buffer example
 ./bin/1_VertexBuffer
+
+# Run the Texture Mapping example
+./bin/2_TextureMapping
 ```
 
 ## Using with RenderDoc
 
 1. Launch RenderDoc
 2. File -> Launch Application
-3. Select the example executable (e.g., `0_HelloTriangle` or `1_VertexBuffer`)
+3. Select the example executable (e.g., `0_HelloTriangle`, `1_VertexBuffer`, or `2_TextureMapping`)
 4. Click Launch
 5. Capture a frame by pressing F12 or using the RenderDoc UI
 6. Analyze the captured frame in RenderDoc
@@ -71,6 +77,9 @@ After building, you can run any of the examples:
     - `main.cpp` - Entry point
     - `shaders/` - GLSL shader files
   - `1_VertexBuffer/` - Triangle rendering using vertex buffers
+    - `main.cpp` - Entry point
+    - `shaders/` - GLSL shader files
+  - `2_TextureMapping/` - Textured quad rendering using vertex and index buffers
     - `main.cpp` - Entry point
     - `shaders/` - GLSL shader files
 - `CMakeLists.txt` - CMake build configuration
@@ -93,6 +102,17 @@ This example builds on the Hello Triangle example and adds:
 - Vertex input binding and attribute descriptions
 - Passing vertex data from C++ to the shader
 
+### 2_TextureMapping
+
+This example builds on the previous examples and demonstrates:
+- Texture loading and uploading to the GPU
+- Creating image views and samplers
+- Using descriptor sets to bind textures to shaders
+- UV coordinates in vertex data
+- Sampling textures in fragment shaders
+- Index buffer usage for efficient rendering
+- Procedural texture generation
+
 ## Debugging with RenderDoc
 
 RenderDoc is a powerful graphics debugging tool that allows you to:
@@ -106,5 +126,7 @@ When using RenderDoc with these examples, you can:
 2. View the shader code
 3. See the pipeline state
 4. Analyze the rendered output
+5. Examine texture data and sampling
+6. Debug UV mapping issues
 
 This is particularly useful for understanding how Vulkan works and for debugging rendering issues.
