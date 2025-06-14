@@ -8,6 +8,8 @@
 #include <cstdlib>
 #include <vector>
 #include <array>
+#include <chrono>
+#include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -63,19 +65,29 @@ public:
     ComputeSkinningApp(int width, int height, const std::string &appName)
         : VulkanComputeApp(width, height, appName, VULKANAPP_GETSHADERDIR)
     {
-        // Vertex data used for the compute skinning stage
-        computeVertices = {
-            {{-0.5f, -0.5f}, {0.0f, 0.0f}, {0, 1}, {1.0f, 0.0f}}, // Bottom left
-            {{0.5f, -0.5f}, {1.0f, 0.0f}, {0, 1}, {0.0f, 1.0f}},  // Bottom right
-            {{0.5f, 0.5f}, {1.0f, 1.0f}, {0, 1}, {0.0f, 1.0f}},   // Top right
-            {{-0.5f, 0.5f}, {0.0f, 1.0f}, {0, 1}, {1.0f, 0.0f}}   // Top left
-        };
+        // Generate a simple cylinder mesh made of vertical segments
+        const uint32_t SEGMENTS = 20;
+        const float RADIUS = 0.25f;
 
-        // Define indices for the quad (two triangles)
-        indices = {
-            0, 1, 2, // First triangle
-            2, 3, 0  // Second triangle
-        };
+        for (uint32_t i = 0; i <= SEGMENTS; ++i)
+        {
+            float t = static_cast<float>(i) / SEGMENTS;
+            float y = -0.5f + t;
+
+            computeVertices.push_back({{-RADIUS, y}, {0.0f, t}, {0, 1}, {1.0f - t, t}});
+            computeVertices.push_back({{RADIUS, y}, {1.0f, t}, {0, 1}, {1.0f - t, t}});
+        }
+
+        for (uint32_t i = 0; i < SEGMENTS; ++i)
+        {
+            uint16_t base = static_cast<uint16_t>(i * 2);
+            indices.push_back(base);
+            indices.push_back(base + 1);
+            indices.push_back(base + 2);
+            indices.push_back(base + 2);
+            indices.push_back(base + 1);
+            indices.push_back(base + 3);
+        }
     }
 
 protected:
@@ -83,9 +95,6 @@ protected:
     void initVulkan() override
     {
         VulkanApp::initVulkan();
-
-        // Run compute shader to skin vertices before creating buffers
-        runComputeSkinning();
 
         // Resources that depend on the command pool created in base init
         createVertexBuffer();
@@ -95,6 +104,10 @@ protected:
         createTextureSampler();
         createDescriptorPool();
         createDescriptorSets();
+
+        // Run compute shader once to populate the vertex buffer
+        runComputeSkinning(0.0f);
+        startTime = std::chrono::steady_clock::now();
 
         // Command buffers were created in base init before we had vertex data
         // so recreate them now
@@ -261,6 +274,12 @@ protected:
     // Record draw commands each frame
     void recordRenderCommands(VkCommandBuffer commandBuffer) override
     {
+        // Update skinning each frame
+        auto now = std::chrono::steady_clock::now();
+        float time = std::chrono::duration<float>(now - startTime).count();
+        float angle = glm::radians(45.0f) * std::sin(time);
+        runComputeSkinning(angle);
+
         VkBuffer vertexBuffers[] = {vertexBuffer};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
@@ -271,7 +290,7 @@ protected:
     }
 
     // Dispatch compute shader to skin vertices
-    void runComputeSkinning()
+    void runComputeSkinning(float angle)
     {
         VkDeviceSize inSize = sizeof(computeVertices[0]) * computeVertices.size();
         VkBuffer inBuf;
@@ -285,11 +304,7 @@ protected:
         vkUnmapMemory(device, inMem);
 
         VkDeviceSize outSize = sizeof(Vertex) * computeVertices.size();
-        VkBuffer outBuf;
-        VkDeviceMemory outMem;
-        createBuffer(outSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     outBuf, outMem);
+        VkBuffer outBuf = vertexBuffer;
 
         VkBuffer boneBuf;
         VkDeviceMemory boneMem;
@@ -297,8 +312,10 @@ protected:
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      boneBuf, boneMem);
         std::array<glm::mat4, 2> boneMats = {
-            glm::rotate(glm::mat4(1.0f), glm::radians(-45.0f), glm::vec3(0, 0, 1)),
-            glm::rotate(glm::mat4(1.0f), glm::radians(45.0f), glm::vec3(0, 0, 1))};
+            glm::mat4(1.0f),
+            glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f)) *
+                glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0, 0, 1)) *
+                glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.5f, 0.0f))};
         vkMapMemory(device, boneMem, 0, sizeof(glm::mat4) * 2, 0, &mapped);
         memcpy(mapped, boneMats.data(), sizeof(glm::mat4) * 2);
         vkUnmapMemory(device, boneMem);
@@ -425,11 +442,6 @@ protected:
 
         vkFreeCommandBuffers(device, commandPool, 1, &cb);
 
-        vertices.resize(computeVertices.size());
-        vkMapMemory(device, outMem, 0, outSize, 0, &mapped);
-        memcpy(vertices.data(), mapped, static_cast<size_t>(outSize));
-        vkUnmapMemory(device, outMem);
-
         // cleanup compute resources
         vkDestroyDescriptorPool(device, compPool, nullptr);
         vkDestroyPipeline(device, compPipeline, nullptr);
@@ -438,8 +450,6 @@ protected:
         vkDestroyDescriptorSetLayout(device, compLayout, nullptr);
         vkDestroyBuffer(device, inBuf, nullptr);
         vkFreeMemory(device, inMem, nullptr);
-        vkDestroyBuffer(device, outBuf, nullptr);
-        vkFreeMemory(device, outMem, nullptr);
         vkDestroyBuffer(device, boneBuf, nullptr);
         vkFreeMemory(device, boneMem, nullptr);
     }
@@ -447,23 +457,8 @@ protected:
     // Create vertex buffer
     void createVertexBuffer()
     {
-        VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-        void *data;
-        vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, vertices.data(), (size_t)bufferSize);
-        vkUnmapMemory(device, stagingBufferMemory);
-
-        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
-
-        copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
-
-        vkDestroyBuffer(device, stagingBuffer, nullptr);
-        vkFreeMemory(device, stagingBufferMemory, nullptr);
+        VkDeviceSize bufferSize = sizeof(Vertex) * computeVertices.size();
+        createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
     }
 
     // Create index buffer
@@ -814,8 +809,9 @@ protected:
 private:
     // Vertex data
     std::vector<ComputeVertex> computeVertices;
-    std::vector<Vertex> vertices;
     std::vector<uint16_t> indices;
+
+    std::chrono::steady_clock::time_point startTime;
 
     // Buffers
     VkBuffer vertexBuffer;
