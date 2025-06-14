@@ -36,6 +36,12 @@ A simple Vulkan application setup for demonstrating RenderDoc usage with multipl
 
    # Or build only the Texture Mapping example
    cmake .. -DBUILD_ALL_EXAMPLES=OFF -DEXAMPLE=2_TextureMapping
+
+   # Or build only the Compute example
+   cmake .. -DBUILD_ALL_EXAMPLES=OFF -DEXAMPLE=3_Compute
+
+   # Or build only the Compute Skinning example
+   cmake .. -DBUILD_ALL_EXAMPLES=OFF -DEXAMPLE=4_ComputeSkinning
    ```
 
 4. Build the project:
@@ -56,13 +62,19 @@ After building, you can run any of the examples:
 
 # Run the Texture Mapping example
 ./bin/2_TextureMapping
+
+# Run the Compute example
+./bin/3_Compute
+
+# Run the Compute Skinning example
+./bin/4_ComputeSkinning
 ```
 
 ## Using with RenderDoc
 
 1. Launch RenderDoc
 2. File -> Launch Application
-3. Select the example executable (e.g., `0_HelloTriangle`, `1_VertexBuffer`, or `2_TextureMapping`)
+3. Select the example executable (e.g., `0_HelloTriangle`, `1_VertexBuffer`, `2_TextureMapping`, `3_Compute`, or `4_ComputeSkinning`)
 4. Click Launch
 5. Capture a frame by pressing F12 or using the RenderDoc UI
 6. Analyze the captured frame in RenderDoc
@@ -82,7 +94,13 @@ After building, you can run any of the examples:
   - `2_TextureMapping/` - Textured quad rendering using vertex and index buffers
     - `main.cpp` - Entry point
     - `shaders/` - GLSL shader files
-- `CMakeLists.txt` - CMake build configuration
+  - `3_Compute/` - Minimal compute shader example
+    - `main.cpp` - Entry point
+    - `shaders/` - GLSL compute shader
+  - `4_ComputeSkinning/` - Compute skinning using a texture-mapped quad
+    - `main.cpp` - Entry point
+    - `shaders/` - Vertex, fragment, and compute shaders
+  - `CMakeLists.txt` - CMake build configuration
 
 ## Examples
 
@@ -112,6 +130,20 @@ This example builds on the previous examples and demonstrates:
 - Sampling textures in fragment shaders
 - Index buffer usage for efficient rendering
 - Procedural texture generation
+
+### 3_Compute
+
+This example demonstrates a minimal compute pipeline:
+- Creates a storage buffer filled with numbers
+- Dispatches a compute shader that doubles each value
+- Reads back and prints the results to the console
+
+### 4_ComputeSkinning
+
+This example shows how compute shaders can be used for vertex skinning:
+- Uses a compute shader to transform quad vertices with two bone matrices
+- Copies the skinned results into a vertex buffer
+- Renders the textured quad using the skinned positions
 
 ## Debugging with RenderDoc
 
