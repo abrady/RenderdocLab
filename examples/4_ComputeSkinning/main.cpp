@@ -104,6 +104,7 @@ protected:
         createTextureSampler();
         createDescriptorPool();
         createDescriptorSets();
+        createComputeResources();
 
         // Run compute shader once to populate the vertex buffer
         runComputeSkinning(0.0f);
@@ -127,6 +128,15 @@ protected:
 
         vkDestroyDescriptorPool(device, descriptorPool, nullptr);
         vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+
+        vkDestroyDescriptorPool(device, computeDescriptorPool, nullptr);
+        vkDestroyPipeline(device, computePipeline, nullptr);
+        vkDestroyPipelineLayout(device, computePipelineLayout, nullptr);
+        vkDestroyDescriptorSetLayout(device, computeDescriptorSetLayout, nullptr);
+        vkDestroyBuffer(device, computeInputBuffer, nullptr);
+        vkFreeMemory(device, computeInputBufferMemory, nullptr);
+        vkDestroyBuffer(device, boneBuffer, nullptr);
+        vkFreeMemory(device, boneBufferMemory, nullptr);
 
         vkDestroyBuffer(device, indexBuffer, nullptr);
         vkFreeMemory(device, indexBufferMemory, nullptr);
@@ -292,130 +302,16 @@ protected:
     // Dispatch compute shader to skin vertices
     void runComputeSkinning(float angle)
     {
-        VkDeviceSize inSize = sizeof(computeVertices[0]) * computeVertices.size();
-        VkBuffer inBuf;
-        VkDeviceMemory inMem;
-        createBuffer(inSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     inBuf, inMem);
         void *mapped;
-        vkMapMemory(device, inMem, 0, inSize, 0, &mapped);
-        memcpy(mapped, computeVertices.data(), static_cast<size_t>(inSize));
-        vkUnmapMemory(device, inMem);
-
-        VkDeviceSize outSize = sizeof(Vertex) * computeVertices.size();
-        VkBuffer outBuf = vertexBuffer;
-
-        VkBuffer boneBuf;
-        VkDeviceMemory boneMem;
-        createBuffer(sizeof(glm::mat4) * 2, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     boneBuf, boneMem);
         std::array<glm::mat4, 2> boneMats = {
             glm::mat4(1.0f),
             glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f)) *
                 glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0, 0, 1)) *
                 glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.5f, 0.0f))};
-        vkMapMemory(device, boneMem, 0, sizeof(glm::mat4) * 2, 0, &mapped);
+
+        vkMapMemory(device, boneBufferMemory, 0, sizeof(glm::mat4) * 2, 0, &mapped);
         memcpy(mapped, boneMats.data(), sizeof(glm::mat4) * 2);
-        vkUnmapMemory(device, boneMem);
-
-        VkDescriptorSetLayoutBinding b0{};
-        b0.binding = 0;
-        b0.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        b0.descriptorCount = 1;
-        b0.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-        VkDescriptorSetLayoutBinding b1{};
-        b1.binding = 1;
-        b1.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        b1.descriptorCount = 1;
-        b1.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-        VkDescriptorSetLayoutBinding b2{};
-        b2.binding = 2;
-        b2.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        b2.descriptorCount = 1;
-        b2.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-        std::array<VkDescriptorSetLayoutBinding, 3> bindings{b0, b1, b2};
-        VkDescriptorSetLayoutCreateInfo dslInfo{};
-        dslInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        dslInfo.bindingCount = (uint32_t)bindings.size();
-        dslInfo.pBindings = bindings.data();
-        VkDescriptorSetLayout compLayout;
-        vkCreateDescriptorSetLayout(device, &dslInfo, nullptr, &compLayout);
-
-        VkPipelineLayoutCreateInfo plInfo{};
-        plInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        plInfo.setLayoutCount = 1;
-        plInfo.pSetLayouts = &compLayout;
-        VkPipelineLayout compPipelineLayout;
-        vkCreatePipelineLayout(device, &plInfo, nullptr, &compPipelineLayout);
-
-        auto code = compileShader("comp.comp", VK_SHADER_STAGE_COMPUTE_BIT);
-        VkShaderModuleCreateInfo modInfo{};
-        modInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        modInfo.codeSize = code.size();
-        modInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
-        VkShaderModule shaderModule;
-        vkCreateShaderModule(device, &modInfo, nullptr, &shaderModule);
-
-        VkComputePipelineCreateInfo cpInfo{};
-        cpInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-        cpInfo.layout = compPipelineLayout;
-        VkPipelineShaderStageCreateInfo stage{};
-        stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-        stage.module = shaderModule;
-        stage.pName = "main";
-        cpInfo.stage = stage;
-        VkPipeline compPipeline;
-        vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &cpInfo, nullptr, &compPipeline);
-
-        VkDescriptorPoolSize poolSize{};
-        poolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        poolSize.descriptorCount = 2;
-        VkDescriptorPoolSize boneSize{};
-        boneSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        boneSize.descriptorCount = 1;
-        std::array<VkDescriptorPoolSize, 2> poolSizes{poolSize, boneSize};
-        VkDescriptorPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = (uint32_t)poolSizes.size();
-        poolInfo.pPoolSizes = poolSizes.data();
-        poolInfo.maxSets = 1;
-        VkDescriptorPool compPool;
-        vkCreateDescriptorPool(device, &poolInfo, nullptr, &compPool);
-
-        VkDescriptorSetAllocateInfo dsAlloc{};
-        dsAlloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        dsAlloc.descriptorPool = compPool;
-        dsAlloc.descriptorSetCount = 1;
-        dsAlloc.pSetLayouts = &compLayout;
-        VkDescriptorSet compSet;
-        vkAllocateDescriptorSets(device, &dsAlloc, &compSet);
-
-        VkDescriptorBufferInfo inInfo{inBuf, 0, inSize};
-        VkDescriptorBufferInfo outInfo{outBuf, 0, outSize};
-        VkDescriptorBufferInfo boneInfo{boneBuf, 0, sizeof(glm::mat4) * 2};
-        std::array<VkWriteDescriptorSet, 3> writes{};
-        writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writes[0].dstSet = compSet;
-        writes[0].dstBinding = 0;
-        writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        writes[0].descriptorCount = 1;
-        writes[0].pBufferInfo = &inInfo;
-        writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writes[1].dstSet = compSet;
-        writes[1].dstBinding = 1;
-        writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        writes[1].descriptorCount = 1;
-        writes[1].pBufferInfo = &outInfo;
-        writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writes[2].dstSet = compSet;
-        writes[2].dstBinding = 2;
-        writes[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        writes[2].descriptorCount = 1;
-        writes[2].pBufferInfo = &boneInfo;
-        vkUpdateDescriptorSets(device, (uint32_t)writes.size(), writes.data(), 0, nullptr);
+        vkUnmapMemory(device, boneBufferMemory);
 
         VkCommandBufferAllocateInfo cbAlloc{};
         cbAlloc.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -424,12 +320,13 @@ protected:
         cbAlloc.commandBufferCount = 1;
         VkCommandBuffer cb;
         vkAllocateCommandBuffers(device, &cbAlloc, &cb);
+
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         vkBeginCommandBuffer(cb, &beginInfo);
-        vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, compPipeline);
-        vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, compPipelineLayout, 0, 1, &compSet, 0, nullptr);
+        vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
+        vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, computePipelineLayout, 0, 1, &computeDescriptorSet, 0, nullptr);
         vkCmdDispatch(cb, static_cast<uint32_t>(computeVertices.size()), 1, 1);
         vkEndCommandBuffer(cb);
 
@@ -441,17 +338,6 @@ protected:
         vkQueueWaitIdle(graphicsQueue);
 
         vkFreeCommandBuffers(device, commandPool, 1, &cb);
-
-        // cleanup compute resources
-        vkDestroyDescriptorPool(device, compPool, nullptr);
-        vkDestroyPipeline(device, compPipeline, nullptr);
-        vkDestroyPipelineLayout(device, compPipelineLayout, nullptr);
-        vkDestroyShaderModule(device, shaderModule, nullptr);
-        vkDestroyDescriptorSetLayout(device, compLayout, nullptr);
-        vkDestroyBuffer(device, inBuf, nullptr);
-        vkFreeMemory(device, inMem, nullptr);
-        vkDestroyBuffer(device, boneBuf, nullptr);
-        vkFreeMemory(device, boneMem, nullptr);
     }
 
     // Create vertex buffer
@@ -651,6 +537,119 @@ protected:
         vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
     }
 
+    // Setup compute pipeline and resources
+    void createComputeResources()
+    {
+        VkDeviceSize inSize = sizeof(computeVertices[0]) * computeVertices.size();
+        createBuffer(inSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     computeInputBuffer, computeInputBufferMemory);
+
+        void *mapped;
+        vkMapMemory(device, computeInputBufferMemory, 0, inSize, 0, &mapped);
+        memcpy(mapped, computeVertices.data(), static_cast<size_t>(inSize));
+        vkUnmapMemory(device, computeInputBufferMemory);
+
+        createBuffer(sizeof(glm::mat4) * 2, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     boneBuffer, boneBufferMemory);
+
+        VkDescriptorSetLayoutBinding b0{};
+        b0.binding = 0;
+        b0.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        b0.descriptorCount = 1;
+        b0.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+        VkDescriptorSetLayoutBinding b1{};
+        b1.binding = 1;
+        b1.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        b1.descriptorCount = 1;
+        b1.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+        VkDescriptorSetLayoutBinding b2{};
+        b2.binding = 2;
+        b2.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        b2.descriptorCount = 1;
+        b2.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+        std::array<VkDescriptorSetLayoutBinding, 3> bindings{b0, b1, b2};
+        VkDescriptorSetLayoutCreateInfo dslInfo{};
+        dslInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        dslInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+        dslInfo.pBindings = bindings.data();
+        vkCreateDescriptorSetLayout(device, &dslInfo, nullptr, &computeDescriptorSetLayout);
+
+        VkPipelineLayoutCreateInfo plInfo{};
+        plInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        plInfo.setLayoutCount = 1;
+        plInfo.pSetLayouts = &computeDescriptorSetLayout;
+        vkCreatePipelineLayout(device, &plInfo, nullptr, &computePipelineLayout);
+
+        auto code = compileShader("comp.comp", VK_SHADER_STAGE_COMPUTE_BIT);
+        VkShaderModuleCreateInfo modInfo{};
+        modInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        modInfo.codeSize = code.size();
+        modInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
+        VkShaderModule shaderModule;
+        vkCreateShaderModule(device, &modInfo, nullptr, &shaderModule);
+
+        VkPipelineShaderStageCreateInfo stage{};
+        stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+        stage.module = shaderModule;
+        stage.pName = "main";
+
+        VkComputePipelineCreateInfo cpInfo{};
+        cpInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+        cpInfo.stage = stage;
+        cpInfo.layout = computePipelineLayout;
+        vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &cpInfo, nullptr, &computePipeline);
+
+        vkDestroyShaderModule(device, shaderModule, nullptr);
+
+        VkDescriptorPoolSize poolSize{};
+        poolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        poolSize.descriptorCount = 2;
+        VkDescriptorPoolSize boneSize{};
+        boneSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        boneSize.descriptorCount = 1;
+        std::array<VkDescriptorPoolSize, 2> poolSizes{poolSize, boneSize};
+        VkDescriptorPoolCreateInfo poolInfo{};
+        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+        poolInfo.pPoolSizes = poolSizes.data();
+        poolInfo.maxSets = 1;
+        vkCreateDescriptorPool(device, &poolInfo, nullptr, &computeDescriptorPool);
+
+        VkDescriptorSetAllocateInfo dsAlloc{};
+        dsAlloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        dsAlloc.descriptorPool = computeDescriptorPool;
+        dsAlloc.descriptorSetCount = 1;
+        dsAlloc.pSetLayouts = &computeDescriptorSetLayout;
+        vkAllocateDescriptorSets(device, &dsAlloc, &computeDescriptorSet);
+
+        VkDescriptorBufferInfo inInfo{computeInputBuffer, 0, inSize};
+        VkDescriptorBufferInfo outInfo{vertexBuffer, 0, sizeof(Vertex) * computeVertices.size()};
+        VkDescriptorBufferInfo boneInfo{boneBuffer, 0, sizeof(glm::mat4) * 2};
+        std::array<VkWriteDescriptorSet, 3> writes{};
+        writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[0].dstSet = computeDescriptorSet;
+        writes[0].dstBinding = 0;
+        writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        writes[0].descriptorCount = 1;
+        writes[0].pBufferInfo = &inInfo;
+        writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[1].dstSet = computeDescriptorSet;
+        writes[1].dstBinding = 1;
+        writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        writes[1].descriptorCount = 1;
+        writes[1].pBufferInfo = &outInfo;
+        writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[2].dstSet = computeDescriptorSet;
+        writes[2].dstBinding = 2;
+        writes[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        writes[2].descriptorCount = 1;
+        writes[2].pBufferInfo = &boneInfo;
+        vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    }
+
     // Helper function to copy buffer
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
     {
@@ -829,6 +828,17 @@ private:
     VkDescriptorSetLayout descriptorSetLayout;
     VkDescriptorPool descriptorPool;
     VkDescriptorSet descriptorSet;
+
+    // Compute resources
+    VkDescriptorSetLayout computeDescriptorSetLayout = VK_NULL_HANDLE;
+    VkPipelineLayout computePipelineLayout = VK_NULL_HANDLE;
+    VkPipeline computePipeline = VK_NULL_HANDLE;
+    VkDescriptorPool computeDescriptorPool = VK_NULL_HANDLE;
+    VkDescriptorSet computeDescriptorSet = VK_NULL_HANDLE;
+    VkBuffer computeInputBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory computeInputBufferMemory = VK_NULL_HANDLE;
+    VkBuffer boneBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory boneBufferMemory = VK_NULL_HANDLE;
 };
 
 int main()
