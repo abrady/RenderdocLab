@@ -119,8 +119,14 @@ public:
     }
 
     void init() {
+        // Initialize GLFW and create a hidden window so that the surface
+        // extension is enabled. This avoids validation errors when the
+        // base helpers query for presentation support.
+        initWindow();
+        glfwHideWindow(window);
         createInstance();
         setupDebugMessenger();
+        createSurface();
         pickPhysicalDevice();
         createLogicalDevice();
         createComputeCommandPool();
