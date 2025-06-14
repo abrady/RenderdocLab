@@ -65,6 +65,11 @@ struct ComputeVertex
     glm::vec2 weights;
 };
 
+struct CameraUBO
+{
+    glm::mat4 viewProj;
+};
+
 // Texture mapping example class that extends VulkanApp
 class ComputeSkinningApp : public VulkanComputeApp
 {
@@ -119,6 +124,7 @@ protected:
         createTextureImage();
         createTextureImageView();
         createTextureSampler();
+        createUniformBuffer();
         createDescriptorPool();
         createDescriptorSets();
 
@@ -161,6 +167,9 @@ protected:
         vkFreeMemory(device, computeInputBufferMemory, nullptr);
         vkDestroyBuffer(device, boneBuffer, nullptr);
         vkFreeMemory(device, boneBufferMemory, nullptr);
+
+        vkDestroyBuffer(device, uniformBuffer, nullptr);
+        vkFreeMemory(device, uniformBufferMemory, nullptr);
 
         vkDestroyBuffer(device, indexBuffer, nullptr);
         vkFreeMemory(device, indexBufferMemory, nullptr);
@@ -316,6 +325,8 @@ protected:
             float angle = glm::radians(45.0f) * std::sin(time);
             runComputeSkinning(angle);
         }
+
+        updateUniformBuffer();
 
         VkBuffer vertexBuffers[] = {vertexBuffer};
         VkDeviceSize offsets[] = {0};
@@ -540,6 +551,34 @@ protected:
         }
     }
 
+    void createUniformBuffer()
+    {
+        VkDeviceSize bufferSize = sizeof(CameraUBO);
+        createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     uniformBuffer, uniformBufferMemory);
+    }
+
+    void updateUniformBuffer()
+    {
+        CameraUBO ubo{};
+        glm::vec3 eye(1.5f, 1.0f, 2.0f);
+        glm::vec3 center(0.0f, 0.0f, 0.0f);
+        glm::vec3 up(0.0f, 1.0f, 0.0f);
+        glm::mat4 view = glm::lookAt(eye, center, up);
+        glm::mat4 proj = glm::perspective(glm::radians(45.0f),
+                                          swapChainExtent.width /
+                                              static_cast<float>(swapChainExtent.height),
+                                          0.1f, 10.0f);
+        proj[1][1] *= -1.0f;
+        ubo.viewProj = proj * view;
+
+        void *data;
+        vkMapMemory(device, uniformBufferMemory, 0, sizeof(ubo), 0, &data);
+        memcpy(data, &ubo, sizeof(ubo));
+        vkUnmapMemory(device, uniformBufferMemory);
+    }
+
     // Create descriptor set layout
     void createDescriptorSetLayout()
     {
@@ -550,10 +589,18 @@ protected:
         samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
         samplerLayoutBinding.pImmutableSamplers = nullptr;
 
+        VkDescriptorSetLayoutBinding uboLayoutBinding{};
+        uboLayoutBinding.binding = 1;
+        uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboLayoutBinding.descriptorCount = 1;
+        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+        std::array<VkDescriptorSetLayoutBinding, 2> bindings{samplerLayoutBinding, uboLayoutBinding};
+
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = 1;
-        layoutInfo.pBindings = &samplerLayoutBinding;
+        layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+        layoutInfo.pBindings = bindings.data();
 
         if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
         {
@@ -564,14 +611,19 @@ protected:
     // Create descriptor pool
     void createDescriptorPool()
     {
-        VkDescriptorPoolSize poolSize{};
-        poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSize.descriptorCount = 1;
+        VkDescriptorPoolSize samplerSize{};
+        samplerSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        samplerSize.descriptorCount = 1;
+        VkDescriptorPoolSize uboSize{};
+        uboSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboSize.descriptorCount = 1;
+
+        std::array<VkDescriptorPoolSize, 2> poolSizes{samplerSize, uboSize};
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = 1;
-        poolInfo.pPoolSizes = &poolSize;
+        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+        poolInfo.pPoolSizes = poolSizes.data();
         poolInfo.maxSets = 1;
 
         if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
@@ -599,16 +651,24 @@ protected:
         imageInfo.imageView = textureImageView;
         imageInfo.sampler = textureSampler;
 
-        VkWriteDescriptorSet descriptorWrite{};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = descriptorSet;
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pImageInfo = &imageInfo;
+        VkDescriptorBufferInfo uboInfo{uniformBuffer, 0, sizeof(CameraUBO)};
 
-        vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+        std::array<VkWriteDescriptorSet, 2> writes{};
+        writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[0].dstSet = descriptorSet;
+        writes[0].dstBinding = 0;
+        writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        writes[0].descriptorCount = 1;
+        writes[0].pImageInfo = &imageInfo;
+
+        writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[1].dstSet = descriptorSet;
+        writes[1].dstBinding = 1;
+        writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        writes[1].descriptorCount = 1;
+        writes[1].pBufferInfo = &uboInfo;
+
+        vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
     }
 
     // Setup compute pipeline and resources
@@ -913,6 +973,8 @@ private:
     VkDeviceMemory computeInputBufferMemory = VK_NULL_HANDLE;
     VkBuffer boneBuffer = VK_NULL_HANDLE;
     VkDeviceMemory boneBufferMemory = VK_NULL_HANDLE;
+    VkBuffer uniformBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory uniformBufferMemory = VK_NULL_HANDLE;
 };
 
 int main()
