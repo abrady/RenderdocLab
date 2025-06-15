@@ -24,7 +24,7 @@ public:
         {
             HMODULE mod = GetModuleHandleA("renderdoc.dll");
             if (!mod)
-                mod = LoadLibraryA("C:\\Program Files\\RenderDocForMetaQuest\\renderdoc.dll");
+                mod = LoadLibraryA(RENDERDOC_LIBRARY);
             if (mod)
             {
                 pRENDERDOC_GetAPI RENDERDOC_GetAPI =
