@@ -12,18 +12,21 @@ A simple Vulkan application setup for demonstrating RenderDoc usage with multipl
 ## Building the Project
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/yourusername/RenderdocBrownbag.git
    cd RenderdocBrownbag
    ```
 
 2. Create a build directory and navigate to it:
+
    ```bash
    mkdir build
    cd build
    ```
 
 3. Configure the project with CMake:
+
    ```bash
    # Build all examples (default)
    cmake ..
@@ -45,13 +48,14 @@ A simple Vulkan application setup for demonstrating RenderDoc usage with multipl
    ```
 
 4. Build the project:
+
    ```bash
    cmake --build .
    ```
 
 ## Running the Examples
 
-After building, you can run any of the examples:
+After building, you can run any of the examples in the build directory:
 
 ```bash
 # Run the Hello Triangle example
@@ -107,6 +111,7 @@ After building, you can run any of the examples:
 ### 0_HelloTriangle
 
 This example demonstrates the most basic Vulkan rendering setup:
+
 - Basic Vulkan initialization
 - Window creation with GLFW
 - Swap chain setup
@@ -116,6 +121,7 @@ This example demonstrates the most basic Vulkan rendering setup:
 ### 1_VertexBuffer
 
 This example builds on the Hello Triangle example and adds:
+
 - Vertex buffer creation and usage
 - Vertex input binding and attribute descriptions
 - Passing vertex data from C++ to the shader
@@ -123,6 +129,7 @@ This example builds on the Hello Triangle example and adds:
 ### 2_TextureMapping
 
 This example builds on the previous examples and demonstrates:
+
 - Texture loading and uploading to the GPU
 - Creating image views and samplers
 - Using descriptor sets to bind textures to shaders
@@ -134,6 +141,7 @@ This example builds on the previous examples and demonstrates:
 ### 3_Compute
 
 This example demonstrates a minimal compute pipeline:
+
 - Creates a storage buffer filled with numbers
 - Dispatches a compute shader that doubles each value
 - Reads back and prints the results to the console
@@ -141,6 +149,7 @@ This example demonstrates a minimal compute pipeline:
 ### 4_ComputeSkinning
 
 This example shows how compute shaders can be used for vertex skinning:
+
 - Uses a compute shader to transform quad vertices with two bone matrices
 - Copies the skinned results into a vertex buffer
 - Renders the textured quad using the skinned positions
@@ -148,12 +157,14 @@ This example shows how compute shaders can be used for vertex skinning:
 ## Debugging with RenderDoc
 
 RenderDoc is a powerful graphics debugging tool that allows you to:
+
 - Capture frames from Vulkan applications
 - Inspect draw calls, resources, and pipeline state
 - View and edit shaders
 - Analyze performance
 
 When using RenderDoc with these examples, you can:
+
 1. Inspect the vertex data
 2. View the shader code
 3. See the pipeline state
