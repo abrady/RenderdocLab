@@ -2,11 +2,15 @@
 
 layout(local_size_x = 1) in;
 
-layout(binding = 0) buffer Data {
+layout(binding = 0) readonly buffer InputData {
     float values[];
-} dataBuf;
+} inputBuf;
+
+layout(binding = 1) writeonly buffer OutputData {
+    float values[];
+} outputBuf;
 
 void main() {
     uint idx = gl_GlobalInvocationID.x;
-    dataBuf.values[idx] = dataBuf.values[idx] * 2.0;
+    outputBuf.values[idx] = inputBuf.values[idx] * 2.0;
 }

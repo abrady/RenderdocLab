@@ -38,37 +38,50 @@ public:
         }
 #endif
         const uint32_t NUM_ELEMENTS = 16;
-        std::vector<float> data(NUM_ELEMENTS);
+        std::vector<float> inData(NUM_ELEMENTS);
+        std::vector<float> outData(NUM_ELEMENTS, 0.f);
         std::cout << "Running compute shader example with " << NUM_ELEMENTS << " elements." << std::endl;
         for (uint32_t i = 0; i < NUM_ELEMENTS; ++i)
         {
-            data[i] = static_cast<float>(i);
-            std::cout << data[i] << " ";
+            inData[i] = static_cast<float>(i);
+            std::cout << inData[i] << " ";
         }
         std::cout << std::endl;
 
-        VkBuffer buffer;
-        VkDeviceMemory bufferMemory;
+        VkBuffer inBuffer;
+        VkDeviceMemory inBufferMemory;
         createBuffer(sizeof(float) * NUM_ELEMENTS,
                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     buffer, bufferMemory);
+                     inBuffer, inBufferMemory);
+
+        VkBuffer outBuffer;
+        VkDeviceMemory outBufferMemory;
+        createBuffer(sizeof(float) * NUM_ELEMENTS,
+                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     outBuffer, outBufferMemory);
 
         void *mapped;
-        vkMapMemory(device, bufferMemory, 0, VK_WHOLE_SIZE, 0, &mapped);
-        memcpy(mapped, data.data(), sizeof(float) * NUM_ELEMENTS);
-        vkUnmapMemory(device, bufferMemory);
+        vkMapMemory(device, inBufferMemory, 0, VK_WHOLE_SIZE, 0, &mapped);
+        memcpy(mapped, inData.data(), sizeof(float) * NUM_ELEMENTS);
+        vkUnmapMemory(device, inBufferMemory);
 
-        VkDescriptorSetLayoutBinding layoutBinding{};
-        layoutBinding.binding = 0;
-        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        layoutBinding.descriptorCount = 1;
-        layoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+        VkDescriptorSetLayoutBinding bindings[2]{};
+        bindings[0].binding = 0;
+        bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        bindings[0].descriptorCount = 1;
+        bindings[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+        bindings[1].binding = 1;
+        bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        bindings[1].descriptorCount = 1;
+        bindings[1].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = 1;
-        layoutInfo.pBindings = &layoutBinding;
+        layoutInfo.bindingCount = 2;
+        layoutInfo.pBindings = bindings;
         VkDescriptorSetLayout descriptorSetLayout;
         vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout);
 
@@ -102,7 +115,7 @@ public:
 
         VkDescriptorPoolSize poolSize{};
         poolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        poolSize.descriptorCount = 1;
+        poolSize.descriptorCount = 2;
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = 1;
@@ -119,18 +132,32 @@ public:
         VkDescriptorSet descriptorSet;
         vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet);
 
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = buffer;
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(float) * NUM_ELEMENTS;
-        VkWriteDescriptorSet write{};
-        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write.dstSet = descriptorSet;
-        write.dstBinding = 0;
-        write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        write.descriptorCount = 1;
-        write.pBufferInfo = &bufferInfo;
-        vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
+        VkDescriptorBufferInfo inBufferInfo{};
+        inBufferInfo.buffer = inBuffer;
+        inBufferInfo.offset = 0;
+        inBufferInfo.range = sizeof(float) * NUM_ELEMENTS;
+
+        VkDescriptorBufferInfo outBufferInfo{};
+        outBufferInfo.buffer = outBuffer;
+        outBufferInfo.offset = 0;
+        outBufferInfo.range = sizeof(float) * NUM_ELEMENTS;
+
+        VkWriteDescriptorSet writes[2]{};
+        writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[0].dstSet = descriptorSet;
+        writes[0].dstBinding = 0;
+        writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        writes[0].descriptorCount = 1;
+        writes[0].pBufferInfo = &inBufferInfo;
+
+        writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[1].dstSet = descriptorSet;
+        writes[1].dstBinding = 1;
+        writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        writes[1].descriptorCount = 1;
+        writes[1].pBufferInfo = &outBufferInfo;
+
+        vkUpdateDescriptorSets(device, 2, writes, 0, nullptr);
 
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
@@ -138,12 +165,12 @@ public:
         vkCmdDispatch(commandBuffer, NUM_ELEMENTS, 1, 1);
         endSingleTimeCommands(commandBuffer);
 
-        vkMapMemory(device, bufferMemory, 0, VK_WHOLE_SIZE, 0, &mapped);
-        memcpy(data.data(), mapped, sizeof(float) * NUM_ELEMENTS);
-        vkUnmapMemory(device, bufferMemory);
+        vkMapMemory(device, outBufferMemory, 0, VK_WHOLE_SIZE, 0, &mapped);
+        memcpy(outData.data(), mapped, sizeof(float) * NUM_ELEMENTS);
+        vkUnmapMemory(device, outBufferMemory);
 
         std::cout << "Data after compute shader execution:" << std::endl;
-        for (float f : data)
+        for (float f : outData)
         {
             std::cout << f << " ";
         }
@@ -154,8 +181,10 @@ public:
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
         vkDestroyShaderModule(device, shaderModule, nullptr);
         vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
-        vkDestroyBuffer(device, buffer, nullptr);
-        vkFreeMemory(device, bufferMemory, nullptr);
+        vkDestroyBuffer(device, inBuffer, nullptr);
+        vkFreeMemory(device, inBufferMemory, nullptr);
+        vkDestroyBuffer(device, outBuffer, nullptr);
+        vkFreeMemory(device, outBufferMemory, nullptr);
 #ifdef ENABLE_RENDERDOC_CAPTURE
         if (rdoc_api)
         {
