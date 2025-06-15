@@ -3,6 +3,10 @@
 #include <vector>
 #include <cstring>
 
+#ifdef ENABLE_RENDERDOC_CAPTURE
+#include <renderdoc_app.h>
+#endif
+
 class ComputeExample : public VulkanComputeApp
 {
 public:
@@ -10,6 +14,20 @@ public:
 
     void runExample()
     {
+#ifdef ENABLE_RENDERDOC_CAPTURE
+        static RENDERDOC_API_1_6_0 *rdoc_api = nullptr;
+        if (rdoc_api == nullptr)
+        {
+            if (RENDERDOC_GetAPI(RENDERDOC_API_VERSION, (void **)&rdoc_api) != 1)
+            {
+                rdoc_api = nullptr;
+            }
+        }
+        if (rdoc_api)
+        {
+            rdoc_api->StartFrameCapture(nullptr, nullptr);
+        }
+#endif
         const uint32_t NUM_ELEMENTS = 16;
         std::vector<float> data(NUM_ELEMENTS);
         std::cout << "Running compute shader example with " << NUM_ELEMENTS << " elements." << std::endl;
@@ -129,6 +147,12 @@ public:
         vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
         vkDestroyBuffer(device, buffer, nullptr);
         vkFreeMemory(device, bufferMemory, nullptr);
+#ifdef ENABLE_RENDERDOC_CAPTURE
+        if (rdoc_api)
+        {
+            rdoc_api->EndFrameCapture(nullptr, nullptr);
+        }
+#endif
     }
 
     void init()

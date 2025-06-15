@@ -26,6 +26,10 @@ set(EXAMPLES
 # Option to build all examples (default: ON)
 option(BUILD_ALL_EXAMPLES "Build all examples" ON)
 
+# Optional RenderDoc capture support
+option(ENABLE_RENDERDOC_CAPTURE "Enable RenderDoc frame capture" OFF)
+set(RENDERDOC_INCLUDE_DIR "" CACHE PATH "Path to renderdoc_app.h")
+
 # Option to select which example to build (used only if BUILD_ALL_EXAMPLES is OFF)
 set(EXAMPLE "0_HelloTriangle" CACHE STRING "Example to build when BUILD_ALL_EXAMPLES is OFF")
 set_property(CACHE EXAMPLE PROPERTY STRINGS ${EXAMPLES})
@@ -116,6 +120,13 @@ function(add_example name)
         ${CMAKE_CURRENT_SOURCE_DIR}/examples/${name}
         ${stb_SOURCE_DIR}
     )
+
+    if(ENABLE_RENDERDOC_CAPTURE)
+        target_compile_definitions(${name} PRIVATE ENABLE_RENDERDOC_CAPTURE)
+        if(RENDERDOC_INCLUDE_DIR)
+            target_include_directories(${name} PRIVATE ${RENDERDOC_INCLUDE_DIR})
+        endif()
+    endif()
 
     # Copy shader files to build directory
     file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/examples/${name}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
