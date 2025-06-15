@@ -5,6 +5,9 @@
 
 #ifdef ENABLE_RENDERDOC_CAPTURE
 #include <renderdoc_app.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #endif
 
 class ComputeExample : public VulkanComputeApp
@@ -14,13 +17,20 @@ public:
 
     void runExample()
     {
+
 #ifdef ENABLE_RENDERDOC_CAPTURE
         static RENDERDOC_API_1_6_0 *rdoc_api = nullptr;
         if (rdoc_api == nullptr)
         {
-            if (RENDERDOC_GetAPI(RENDERDOC_API_VERSION, (void **)&rdoc_api) != 1)
+            HMODULE mod = GetModuleHandleA("renderdoc.dll");
+            if (!mod)
+                mod = LoadLibraryA("C:\\Program Files\\RenderDocForMetaQuest\\renderdoc.dll");
+            if (mod)
             {
-                rdoc_api = nullptr;
+                pRENDERDOC_GetAPI RENDERDOC_GetAPI =
+                    (pRENDERDOC_GetAPI)GetProcAddress(mod, "RENDERDOC_GetAPI");
+                int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void **)&rdoc_api);
+                assert(ret == 1);
             }
         }
         if (rdoc_api)
