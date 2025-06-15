@@ -98,8 +98,8 @@ std::vector<char> VulkanApp::compileShader(const std::string &filename, VkShader
     sourceFile.write(shaderSource.data(), shaderSource.size());
     sourceFile.close();
 
-    // Compile the shader using glslc
-    std::string command = "glslc " + shaderTypeFlag + " " + sourceFilename + " -o " + tempFilename;
+    // Compile the shader using glslc with debug information
+    std::string command = "glslc -g -O0 " + shaderTypeFlag + " " + sourceFilename + " -o " + tempFilename;
     int result = std::system(command.c_str());
 
     if (result != 0)
