@@ -23,7 +23,7 @@ constexpr bool USE_COMPUTE_SKINNING = true;
 // Vertex structure with position and texture coordinates
 struct alignas(16) Vertex
 {
-    alignas(16) glm::vec3 pos;
+    glm::vec4 pos;
     glm::vec2 texCoord;
 
     static VkVertexInputBindingDescription getBindingDescription()
@@ -59,7 +59,7 @@ struct alignas(16) Vertex
 // Vertex layout used during the compute pass
 struct alignas(16) ComputeVertex
 {
-    alignas(16) glm::vec3 pos;
+    glm::vec4 pos;
     glm::vec2 texCoord;
     glm::uvec2 boneIDs;
     glm::vec2 weights;
@@ -98,7 +98,7 @@ public:
                 float theta = tj * 2.0f * static_cast<float>(M_PI);
                 float x = RADIUS * std::cos(theta);
                 float z = RADIUS * std::sin(theta);
-                computeVertices.push_back({{x, y, z}, {tj, ty}, {0, 1}, {1.0f - ty, ty}});
+                computeVertices.push_back({{x, y, z, 1.f}, {tj, ty}, {0, 1}, {1.0f - ty, ty}});
             }
         }
 
