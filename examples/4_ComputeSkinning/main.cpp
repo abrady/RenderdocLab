@@ -567,7 +567,14 @@ protected:
     void updateUniformBuffer()
     {
         CameraUBO ubo{};
-        glm::vec3 eye(1.5f, 1.0f, 2.0f);
+
+        // Slowly rotate the view around the cylinder center.
+        auto now = std::chrono::steady_clock::now();
+        float time = std::chrono::duration<float>(now - startTime).count();
+        float angle = glm::radians(20.0f) * time; // 20 degrees per second
+
+        const float radius = 2.5f; // distance from the center
+        glm::vec3 eye(radius * std::sin(angle), 1.0f, radius * std::cos(angle));
         glm::vec3 center(0.0f, 0.0f, 0.0f);
         glm::vec3 up(0.0f, 1.0f, 0.0f);
         glm::mat4 view = glm::lookAt(eye, center, up);
