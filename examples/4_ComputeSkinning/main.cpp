@@ -8,7 +8,7 @@
 
 // Toggle this to enable/disable compute skinning. When false, the example
 // renders the cylinder geometry without running the compute shader.
-constexpr bool USE_COMPUTE_SKINNING = false;
+constexpr bool USE_COMPUTE_SKINNING = true;
 
 #include <iostream>
 #include <stdexcept>
