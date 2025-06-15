@@ -57,21 +57,21 @@ A simple Vulkan application setup for demonstrating RenderDoc usage with multipl
 
 After building, you can run any of the examples in the build directory:
 
-```bash
+```pwsh
 # Run the Hello Triangle example
-./bin/0_HelloTriangle
+.\bin\Debug\0_HelloTriangle.exe
 
 # Run the Vertex Buffer example
-./bin/1_VertexBuffer
+.\bin\Debug\1_VertexBuffer.exe
 
 # Run the Texture Mapping example
-./bin/2_TextureMapping
+.\bin\Debug\2_TextureMapping.exe
 
 # Run the Compute example
-./bin/3_Compute
+.\bin\Debug\3_Compute.exe
 
 # Run the Compute Skinning example
-./bin/4_ComputeSkinning
+.\bin\Debug\4_ComputeSkinning.exe
 ```
 
 ## Using with RenderDoc
@@ -122,6 +122,64 @@ This example demonstrates the most basic Vulkan rendering setup:
 - Graphics pipeline configuration
 - Simple triangle rendering with hardcoded vertices in the shader
 
+![](Assets/Screenshots/HelloTriangleApp.png)
+
+#### Event Viewer
+
+![](Assets/Screenshots/HelloTriangle_Events.png)
+
+These show the calls you've made: just a single draw call
+
+Selecting an event (like vkCmdDraw) lets you see what happened during that call.
+
+#### Mesh Viewer
+
+The mesh viewer shows you inputs and outputs of the vertex shader.
+
+![](Assets/Screenshots/HelloTriangle_Mesh.png)
+
+You can see here that there is no input mesh. that's becuase the triangle is drawn entirely by the shader.
+
+![](Assets/Screenshots/HelloTriangle_MeshOut.png)
+
+#### Debugging Verts
+
+![](Assets/Screenshots/HelloTriangle_DebugVert.png)
+
+you can debug the vertex shader for a given vertex by right clicking and choosing debug.
+
+![](Assets/Screenshots/HelloTriangle_DebugDisasm.png)
+
+By default you'll have the disassembly window open.
+
+![](Assets/Screenshots/HelloTriangle_DebugSrc.png)
+
+These examples also provide debug information so you can view the source of the shader.
+
+![](Assets/Screenshots/HelloTriangle_DebuggerInUse.png)
+
+#### Texture Viewer
+
+![](Assets/Screenshots/0_HelloTriangle_TextuerViewer.png)
+
+![](Assets/Screenshots/0_HelloTriangle_PixelDebug.png)
+
+#### Debugging a pixel (fragment)
+
+![](Assets/Screenshots/0_HelloTriangle_Disasm.png)
+
+![](Assets/Screenshots/0_HelloTriangle_Src.png)
+
+Similar controls to the above vertex debugger.
+
+#### Debugging Fragments
+
+And you can debug things pretty much like most debuggers.
+
+#### Challenges
+
+1. Debug into the vertex and fragment shaders and examine the variables.
+
 ### 1_VertexBuffer
 
 This example builds on the Hello Triangle example and adds:
@@ -129,6 +187,61 @@ This example builds on the Hello Triangle example and adds:
 - Vertex buffer creation and usage
 - Vertex input binding and attribute descriptions
 - Passing vertex data from C++ to the shader
+
+![](Assets/Screenshots/1_VertBufApp.png)
+
+Visually it looks the same as 0_HelloTriangle. The difference is that this time the verts come from the CPU:
+
+![](Assets/Screenshots/1_VertBuf_VertShader.png)
+
+![](Assets/Screenshots/1_VertBuf_FragShader.png)
+
+The vertex shader just passes through the position and color, and the fragment shader just uses the given color.
+
+![](Assets/Screenshots/1_VertBuf_Ctor.png)
+
+![](Assets/Screenshots/1_VertBuf_VertsCopied.png)
+
+![](Assets/Screenshots/1_VertBuf_RecordDrawCmds.png)
+
+![](Assets/Screenshots/1_VertBuf_MeshPanel_VertsIn.png)
+
+Debugging this is basically identical to 0_HelloTriangle except for how the shader handles the input.
+
+#### Pipeline State
+
+![](Assets/Screenshots/1_VertBuf_PipelineState.png)
+
+Now that we have some input, it is worth looking at the Pipeline State Panel. This panel is the top-level view of what's being rendered this call.
+
+You can click on each of the pipeline stages to see more info. There's not much to see beyond the Vertex Input so we'll cover the other stages
+in more detail later.
+
+##### Vertex Input and Buffer Contents
+
+As shown above, the first stage in the pipeline
+
+![](Assets/Screenshots/1_VertBuf_ViewInputGo.png)
+
+If you click this green arrow you can view the input contents:
+
+![](Assets/Screenshots/1_VertBuf_InputContents.png)
+
+##### Rasterizer
+
+![](Assets/Screenshots/1_VertBuf_RasterizerStage.png)
+
+Various fixed-function and state info that may be useful in some situations.
+
+##### Frame Buffer
+
+![](Assets/Screenshots/1_VertBuf_FrameBufStage.png)
+
+The only interesting thing here is that you can see what the final image looks like if you choose.
+
+#### Challenges
+
+1. Change the code to draw a second triangle, then follow it being drawn in renderdoc
 
 ### 2_TextureMapping
 
@@ -142,6 +255,36 @@ This example builds on the previous examples and demonstrates:
 - Index buffer usage for efficient rendering
 - Procedural texture generation
 
+![](Assets/Screenshots/2_Tex_App.png)
+
+This is the first example with enough complexity to dive into a few different things:
+
+#### Vertex Input
+
+![](Assets/Screenshots/2_Tex_VertInput.png)
+
+- a vertex and index buffer
+- the input vertex now contains a UV texture coord
+
+![](Assets/Screenshots/InputBufContents.png)
+
+#### Mesh Viewer
+
+![](Assets/Screenshots/2_Tex_MeshViewerHighlight.png)
+
+The mesh viewer will highlight the triangle that is being drawn as part of what you've selected now that we have more than one triangle
+
+#### Fragment Shader
+
+![](Assets/Screenshots/2_Tex_FragShaderStage.png)
+
+The fragment shader now has a texture bound to it
+
+#### TextureMapping Challenges
+
+1. Step through this in the debugger and make sure you understand what is bound to the vertex and fragment shaders and how sampling works.
+2. Add color back to each vertex
+
 ### 3_Compute
 
 This example demonstrates a minimal compute pipeline:
@@ -149,6 +292,12 @@ This example demonstrates a minimal compute pipeline:
 - Creates a storage buffer filled with numbers
 - Dispatches a compute shader that doubles each value
 - Reads back and prints the results to the console
+
+![](Assets/Screenshots/3_Comp_Cmdline.png)
+
+Nothing visual about this one: it just doubles each value of the inputs.
+
+#### Debugging Compute Shaders
 
 ### 4_ComputeSkinning
 
