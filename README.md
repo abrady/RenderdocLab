@@ -297,7 +297,32 @@ This example demonstrates a minimal compute pipeline:
 
 Nothing visual about this one: it just doubles each value of the inputs.
 
+One thing worth showing in this example is the in-app renderdoc api: the nutshell is that
+if you launch an app with renderdoc, the renderdoc.dll will be injected and you can query it with
+`GetModuleHandleA("renderdoc.dll");`
+
+#### Enabling RenderDoc Capture in the Compute Example
+
+The `3_Compute` example contains optional code that programmatically triggers a
+RenderDoc capture around the compute dispatch. To enable this feature during the
+build, configure CMake with the following options:
+
+```bash
+cmake .. -DENABLE_RENDERDOC_CAPTURE=ON -DRENDERDOC_INCLUDE_DIR=/path/to/renderdoc/include
+```
+
+`RENDERDOC_INCLUDE_DIR` should point to the directory containing
+`renderdoc_app.h` (for example `C:/Program Files/RenderDoc/include` on Windows or
+`/usr/include` on Linux). When enabled, running the compute example will produce
+a capture without requiring manual interaction in the RenderDoc UI.
+
 #### Debugging Compute Shaders
+
+![](Assets/Screenshots/3_Compute_ComputeStage.png)
+
+The compute stage can be found in the Pipeline State panel on the far right. You can choose to debug from this view
+
+![](Assets/Screenshots/3_Compute_DebugDialog.png)
 
 ### 4_ComputeSkinning
 
@@ -326,18 +351,3 @@ When using RenderDoc with these examples, you can:
 6. Debug UV mapping issues
 
 This is particularly useful for understanding how Vulkan works and for debugging rendering issues.
-
-### Enabling RenderDoc Capture in the Compute Example
-
-The `3_Compute` example contains optional code that programmatically triggers a
-RenderDoc capture around the compute dispatch. To enable this feature during the
-build, configure CMake with the following options:
-
-```bash
-cmake .. -DENABLE_RENDERDOC_CAPTURE=ON -DRENDERDOC_INCLUDE_DIR=/path/to/renderdoc/include
-```
-
-`RENDERDOC_INCLUDE_DIR` should point to the directory containing
-`renderdoc_app.h` (for example `C:/Program Files/RenderDoc/include` on Windows or
-`/usr/include` on Linux). When enabled, running the compute example will produce
-a capture without requiring manual interaction in the RenderDoc UI.

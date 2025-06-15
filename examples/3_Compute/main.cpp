@@ -22,9 +22,8 @@ public:
         static RENDERDOC_API_1_6_0 *rdoc_api = nullptr;
         if (rdoc_api == nullptr)
         {
+            // this will be loaded if this is run from renderdoc UI
             HMODULE mod = GetModuleHandleA("renderdoc.dll");
-            if (!mod)
-                mod = LoadLibraryA(RENDERDOC_LIBRARY);
             if (mod)
             {
                 pRENDERDOC_GetAPI RENDERDOC_GetAPI =
@@ -161,6 +160,11 @@ public:
         if (rdoc_api)
         {
             rdoc_api->EndFrameCapture(nullptr, nullptr);
+
+            char filename[512] = {};
+            uint32_t len = 512;
+            rdoc_api->GetCapture(0, filename, &len, nullptr);
+            printf("RenderDoc wrote %s\n", filename);
         }
 #endif
     }
