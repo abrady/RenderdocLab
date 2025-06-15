@@ -21,9 +21,9 @@ constexpr bool USE_COMPUTE_SKINNING = true;
 #include <glm/gtc/matrix_transform.hpp>
 
 // Vertex structure with position and texture coordinates
-struct Vertex
+struct alignas(16) Vertex
 {
-    glm::vec3 pos;
+    alignas(16) glm::vec3 pos;
     glm::vec2 texCoord;
 
     static VkVertexInputBindingDescription getBindingDescription()
@@ -57,13 +57,17 @@ struct Vertex
 };
 
 // Vertex layout used during the compute pass
-struct ComputeVertex
+struct alignas(16) ComputeVertex
 {
-    glm::vec3 pos;
+    alignas(16) glm::vec3 pos;
     glm::vec2 texCoord;
     glm::uvec2 boneIDs;
     glm::vec2 weights;
 };
+
+static_assert(sizeof(Vertex) == 32, "Vertex size mismatch with shader layout");
+static_assert(sizeof(ComputeVertex) == 48,
+              "ComputeVertex size mismatch with shader layout");
 
 struct CameraUBO
 {
