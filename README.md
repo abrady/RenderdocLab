@@ -83,6 +83,10 @@ After building, you can run any of the examples in the build directory:
 5. Capture a frame by pressing F12 or using the RenderDoc UI
 6. Analyze the captured frame in RenderDoc
 
+The example runner compiles shaders on the fly using `glslc -g -O0`, so the
+SPIR-V binaries contain debug information. When you open a capture in RenderDoc
+you'll be able to see and step through the original GLSL source.
+
 ## Project Structure
 
 - `common/` - Common code shared between examples
