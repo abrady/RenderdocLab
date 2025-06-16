@@ -12,7 +12,7 @@ A simple Vulkan application setup for demonstrating RenderDoc usage with multipl
 ## Building the Project
 
 Run the folowing commands in a shell that has your coding environment
-set up. For example, open cmd and run `"C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\Tools\VsDevCmd.bat"` or whatever visual studio you have installed.
+set up. For example, if you have Visual Studio installed, run the visual studio command shell in an existing shell run `"C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\Tools\VsDevCmd.bat"`
 
 ### Clone the repository
 
