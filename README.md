@@ -87,6 +87,26 @@ The example runner compiles shaders on the fly using `glslc -g -O0`, so the
 SPIR-V binaries contain debug information. When you open a capture in RenderDoc
 you'll be able to see and step through the original GLSL source.
 
+## Debugging with RenderDoc
+
+RenderDoc is a powerful graphics debugging tool that allows you to:
+
+- Capture frames from Vulkan applications
+- Inspect draw calls, resources, and pipeline state
+- View and edit shaders
+- Analyze performance
+
+When using RenderDoc with these examples, you can:
+
+1. Inspect the vertex data
+2. View the shader code
+3. See the pipeline state
+4. Analyze the rendered output
+5. Examine texture data and sampling
+6. Debug UV mapping issues
+
+This is particularly useful for understanding how Vulkan works and for debugging rendering issues.
+
 ## Project Structure
 
 - `common/` - Common code shared between examples
@@ -318,11 +338,31 @@ a capture without requiring manual interaction in the RenderDoc UI.
 
 #### Debugging Compute Shaders
 
-![](Assets/Screenshots/3_Compute_ComputeStage.png)
+![](Assets/Screenshots/3_Compute_Pipeline.png)
 
 The compute stage can be found in the Pipeline State panel on the far right. You can choose to debug from this view
 
+![](Assets/Screenshots/3_Compute_Buffers.png)
+
+You can see the input and output buffers here, and view their contents.
+
 ![](Assets/Screenshots/3_Compute_DebugDialog.png)
+
+If you click debug you'll get this confusing dialog.
+
+A compute dispatch is potentially organized into 1, 2, or 3 dimensions
+depending on the local_size_x/y/z values in the shader. this project won't cover
+the details any further but imagine it might be convenient to operate on
+16x16 tiles with hyper-fast local memory and you can see why it'd
+be convenient to break up a compute shader along multiple dimensions.
+
+For this example, the first value (x) is all you need, e.g. x=11.
+
+#### Compute Challenges
+
+1. Debug the compute shader and observe the inputs and outputs for the given thread are as expected
+2. change the dimensionality of the shader (e.g. change local_size_x/y/z) and get it working. Explore
+   the gl_LocalInvocationID and gl_WorkGroupID variables to see that you have an understanding.
 
 ### 4_ComputeSkinning
 
@@ -331,23 +371,3 @@ This example shows how compute shaders can be used for vertex skinning:
 - Uses a compute shader to transform quad vertices with two bone matrices
 - Copies the skinned results into a vertex buffer
 - Renders the textured quad using the skinned positions
-
-## Debugging with RenderDoc
-
-RenderDoc is a powerful graphics debugging tool that allows you to:
-
-- Capture frames from Vulkan applications
-- Inspect draw calls, resources, and pipeline state
-- View and edit shaders
-- Analyze performance
-
-When using RenderDoc with these examples, you can:
-
-1. Inspect the vertex data
-2. View the shader code
-3. See the pipeline state
-4. Analyze the rendered output
-5. Examine texture data and sampling
-6. Debug UV mapping issues
-
-This is particularly useful for understanding how Vulkan works and for debugging rendering issues.

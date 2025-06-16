@@ -28,11 +28,7 @@ option(BUILD_ALL_EXAMPLES "Build all examples" ON)
 
 # Optional RenderDoc capture support
 option(ENABLE_RENDERDOC_CAPTURE "Enable RenderDoc frame capture" OFF)
-set(RENDERDOC_INCLUDE_DIR "" CACHE PATH "Path to renderdoc_app.h")
-
-# DONOTCHECKIN
-set(ENABLE_RENDERDOC_CAPTURE OFF)
-set(RENDERDOC_INCLUDE_DIR "")
+set(RENDERDOC_INCLUDE_DIR "C:/Program Files/RenderDocForMetaQuest/" CACHE PATH "Path to renderdoc_app.h")
 
 # Option to select which example to build (used only if BUILD_ALL_EXAMPLES is OFF)
 set(EXAMPLE "0_HelloTriangle" CACHE STRING "Example to build when BUILD_ALL_EXAMPLES is OFF")
