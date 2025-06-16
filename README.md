@@ -21,8 +21,17 @@ set up. For example, open cmd and run `"C:\Program Files\Microsoft Visual Studio
    cd RenderdocLab
    ```
 
-### VS Code is usually pretty good at helping you set up an environment
+### Windows Environment Setup
 
+![](Assets/Screenshots/WindowsEnvironment_VS.png)
+
+- make sure you have C++ desktop development enabled in visual studio
+
+1. Run `setup.bat` in the project directory
+
+### VS Code works well for build/debugging
+
+0. Make sure you have the Cmake: Tools (by microsoft) installed.
 1. run CMake: Configure - this creates the projects for compilation
 2. run CMake: Build - compiles all the executables
 3. CMake: Set Launch/Debug Target - let's you choose what to debug
