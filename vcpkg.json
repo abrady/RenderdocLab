@@ -2,6 +2,7 @@
     "name": "renderdoc-lab",
     "version-string": "0.2.0",
     "dependencies": [
-        "vulkan"
+        "vulkan",
+        "vulkan-validationlayers"
     ]
 }

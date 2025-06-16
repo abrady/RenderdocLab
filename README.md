@@ -27,15 +27,16 @@ set up. For example, open cmd and run `"C:\Program Files\Microsoft Visual Studio
 
 - make sure you have C++ desktop development enabled in visual studio
 
-1. Run `setup.bat` in the project directory
-
 ### VS Code works well for build/debugging
 
-0. Make sure you have the Cmake: Tools (by microsoft) installed.
 1. run CMake: Configure - this creates the projects for compilation
 2. run CMake: Build - compiles all the executables
 3. CMake: Set Launch/Debug Target - let's you choose what to debug
 4. CMake: Debug - debug the actual target.
+
+### Or run cmake manually
+
+1. cmake -S path_to_RenderdocLab -B path_to_RenderdocLab/build -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows
 
 ## Running the Examples
 
