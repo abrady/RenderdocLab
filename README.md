@@ -1,4 +1,4 @@
-# RenderdocBrownbag
+# Renderdoc Lab
 
 A simple Vulkan application setup for demonstrating RenderDoc usage with multiple examples.
 
@@ -14,8 +14,8 @@ A simple Vulkan application setup for demonstrating RenderDoc usage with multipl
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/RenderdocBrownbag.git
-   cd RenderdocBrownbag
+   git clone https://github.com/yourusername/RenderdocLab.git
+   cd RenderdocLab
    ```
 
 2. Create a build directory and navigate to it:
