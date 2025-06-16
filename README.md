@@ -11,47 +11,22 @@ A simple Vulkan application setup for demonstrating RenderDoc usage with multipl
 
 ## Building the Project
 
-1. Clone the repository:
+Run the folowing commands in a shell that has your coding environment
+set up. For example, open cmd and run `"C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\Tools\VsDevCmd.bat"` or whatever visual studio you have installed.
 
-   ```bash
+### Clone the repository
+
+   ```pwsh
    git clone https://github.com/yourusername/RenderdocLab.git
    cd RenderdocLab
    ```
 
-2. Create a build directory and navigate to it:
+### VS Code is usually pretty good at helping you set up an environment
 
-   ```bash
-   mkdir build
-   cd build
-   ```
-
-3. Configure the project with CMake:
-
-   ```bash
-   # Build all examples (default)
-   cmake ..
-
-   # Or build only a specific example
-   cmake .. -DBUILD_ALL_EXAMPLES=OFF -DEXAMPLE=0_HelloTriangle
-
-   # Or build only the Vertex Buffer example
-   cmake .. -DBUILD_ALL_EXAMPLES=OFF -DEXAMPLE=1_VertexBuffer
-
-   # Or build only the Texture Mapping example
-   cmake .. -DBUILD_ALL_EXAMPLES=OFF -DEXAMPLE=2_TextureMapping
-
-   # Or build only the Compute example
-   cmake .. -DBUILD_ALL_EXAMPLES=OFF -DEXAMPLE=3_Compute
-
-   # Or build only the Compute Skinning example
-   cmake .. -DBUILD_ALL_EXAMPLES=OFF -DEXAMPLE=4_ComputeSkinning
-   ```
-
-4. Build the project:
-
-   ```bash
-   cmake --build .
-   ```
+1. run CMake: Configure - this creates the projects for compilation
+2. run CMake: Build - compiles all the executables
+3. CMake: Set Launch/Debug Target - let's you choose what to debug
+4. CMake: Debug - debug the actual target.
 
 ## Running the Examples
 
