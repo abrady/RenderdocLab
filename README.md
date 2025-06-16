@@ -371,3 +371,13 @@ This example shows how compute shaders can be used for vertex skinning:
 - Uses a compute shader to transform quad vertices with two bone matrices
 - Copies the skinned results into a vertex buffer
 - Renders the textured quad using the skinned positions
+
+![](Assets/Screenshots/4_Skin_App.png)
+
+This example just combines elements from earlier ones into something
+similar to what you'll find in an real game: most games will have a compute
+pass of some kind, usually to do skinning, and then will render various things.
+
+#### Challenges
+
+1. there's a bug in the skinning code for some of the faces where they get skinned incorrectly. debug and fix this.
