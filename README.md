@@ -33,6 +33,7 @@ For example, if you have Visual Studio installed, run the visual studio command 
 
 ### VS Code works well for build/debugging
 
+0. install the cmake vsdbg extensions
 1. run CMake: Configure - this creates the projects for compilation
 2. run CMake: Build - compiles all the executables
 3. CMake: Set Launch/Debug Target - let's you choose what to debug
