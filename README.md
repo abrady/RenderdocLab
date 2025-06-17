@@ -189,6 +189,8 @@ And you can debug things pretty much like most debuggers.
 #### Challenges
 
 1. Debug into the vertex and fragment shaders and examine the variables.
+2. Modify the fragment shader to output a constant color and capture a frame to verify the change.
+3. Inspect the pipeline state in RenderDoc and note how the viewport and scissor rectangles are configured.
 
 ### 1_VertexBuffer
 
@@ -252,6 +254,8 @@ The only interesting thing here is that you can see what the final image looks l
 #### Challenges
 
 1. Change the code to draw a second triangle, then follow it being drawn in renderdoc
+2. Use the vertex input viewer in RenderDoc to inspect the vertex buffer contents and verify attribute offsets.
+3. Extend the vertex structure with a color attribute and display the per-vertex colors in the fragment shader.
 
 ### 2_TextureMapping
 
@@ -294,6 +298,9 @@ The fragment shader now has a texture bound to it
 
 1. Step through this in the debugger and make sure you understand what is bound to the vertex and fragment shaders and how sampling works.
 2. Add color back to each vertex
+3. Replace the texture with a custom image and confirm it appears correctly in the texture viewer.
+4. Experiment with different sampler filter and wrap modes and observe the results in RenderDoc.
+5. Modify the shader to offset the UV coordinates over time and capture a frame to inspect the animated sampling.
 
 ### 3_Compute
 
@@ -353,6 +360,9 @@ For this example, the first value (x) is all you need, e.g. x=11.
 1. Debug the compute shader and observe the inputs and outputs for the given thread are as expected
 2. change the dimensionality of the shader (e.g. change local_size_x/y/z) and get it working. Explore
    the gl_LocalInvocationID and gl_WorkGroupID variables to see that you have an understanding.
+3. Modify the compute shader to perform a different operation (e.g. squaring each value) and verify the output buffer.
+4. Use the in-application RenderDoc API to capture only the dispatch event and inspect the minimal capture.
+5. Enable performance counters in RenderDoc and measure how dispatch size affects execution time.
 
 ### 4_ComputeSkinning
 
@@ -371,3 +381,6 @@ pass of some kind, usually to do skinning, and then will render various things.
 #### Challenges
 
 1. there's a bug in the skinning code for some of the faces where they get skinned incorrectly. debug and fix this.
+2. Use the buffer viewer to inspect the skinned vertex positions before and after the compute dispatch.
+3. Experiment with different bone weights in the shader and observe how they influence the animation.
+4. Capture frames both before and after the compute shader runs to compare the vertex buffer contents.
